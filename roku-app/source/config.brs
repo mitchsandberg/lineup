@@ -22,7 +22,7 @@ function GetStreamingServices() as Object
             id: "peacock",
             name: "Peacock",
             rokuChannelId: "593099",
-            color: "#000000"
+            color: "#6B3FA0"
         },
         {
             id: "prime-video",

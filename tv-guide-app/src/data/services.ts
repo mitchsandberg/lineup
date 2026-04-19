@@ -26,7 +26,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
   {
     id: 'peacock',
     name: 'Peacock',
-    color: '#000000',
+    color: '#6B3FA0',
     group: 'major',
     deepLinks: {
       tvos: 'peacocktv://',
