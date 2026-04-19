@@ -13,6 +13,8 @@ sub Main(args as Dynamic)
         })
     end if
 
+    scene.ObserveField("exitApp", m.port)
+
     while true
         msg = Wait(0, m.port)
         msgType = Type(msg)
@@ -21,6 +23,11 @@ sub Main(args as Dynamic)
             if msg.IsScreenClosed()
                 return
             end if
+        end if
+
+        if msgType = "roSGNodeEvent" and msg.GetField() = "exitApp" and msg.GetData() = true
+            screen.Close()
+            return
         end if
     end while
 end sub

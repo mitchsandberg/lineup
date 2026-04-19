@@ -1011,7 +1011,7 @@ end function
 
 function handlePickerKeys(key as String) as Boolean
     if key = "OK"
-        m.top.close = true
+        m.top.exitApp = true
         return true
     end if
     if key = "back"
