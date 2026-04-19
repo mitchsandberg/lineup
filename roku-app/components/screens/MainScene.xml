@@ -16,90 +16,44 @@
             height="720"
             color="#0D1117"
         >
+            <!-- Header row -->
             <Label
                 id="titleLabel"
                 text="Lineup"
-                translation="[60, 25]"
+                translation="[60, 22]"
                 font="font:LargeBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
                 id="dateLabel"
-                translation="[1060, 33]"
+                translation="[1020, 30]"
                 font="font:SmallSystemFont"
                 color="#8B95A5"
                 horizAlign="right"
-                width="180"
-            />
-
-            <!-- Tab indicator -->
-            <Label
-                id="tabGuideLabel"
-                text="Guide"
-                translation="[60, 68]"
-                font="font:SmallBoldSystemFont"
-                color="#FFFFFF"
-            />
-            <Label
-                id="tabSettingsLabel"
-                text="Settings"
-                translation="[140, 68]"
-                font="font:SmallSystemFont"
-                color="#8B95A5"
-            />
-
-            <!-- Sport selector -->
-            <Rectangle
-                id="sportSelectorBg"
-                translation="[60, 98]"
                 width="220"
-                height="36"
-                color="#1A1F2E"
-                cornerRadius="6"
-            >
-                <Label
-                    id="sportArrowLeft"
-                    text="<"
-                    translation="[10, 6]"
-                    font="font:SmallBoldSystemFont"
-                    color="#8B95A5"
-                />
-                <Label
-                    id="sportSelectorLabel"
-                    text="All Sports"
-                    translation="[30, 6]"
-                    width="160"
-                    horizAlign="center"
-                    font="font:SmallBoldSystemFont"
-                    color="#FFFFFF"
-                />
-                <Label
-                    id="sportArrowRight"
-                    text=">"
-                    translation="[196, 6]"
-                    font="font:SmallBoldSystemFont"
-                    color="#8B95A5"
-                />
-            </Rectangle>
+            />
 
-            <!-- Scrollable events area -->
-            <Group id="eventsGroup" translation="[60, 148]" />
+            <!-- Sport filter pills -->
+            <Group id="sportPillsGroup" translation="[60, 70]" />
 
-            <!-- Loading label -->
+            <!-- Events scroll area -->
+            <Group id="eventsGroup" translation="[60, 120]" />
+
+            <!-- Loading -->
             <Label
                 id="loadingLabel"
                 text="Loading sports..."
-                translation="[540, 360]"
+                translation="[540, 380]"
                 font="font:MediumSystemFont"
                 color="#8B95A5"
                 visible="true"
             />
 
-            <!-- Empty state -->
+            <!-- Empty -->
             <Label
                 id="emptyLabel"
                 text="No live or upcoming events"
-                translation="[440, 360]"
+                translation="[440, 380]"
                 font="font:MediumSystemFont"
                 color="#8B95A5"
                 visible="false"
@@ -116,35 +70,23 @@
         >
             <Label
                 text="Lineup"
-                translation="[60, 25]"
+                translation="[60, 22]"
                 font="font:LargeBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
-                text="Guide"
-                translation="[60, 68]"
-                font="font:SmallSystemFont"
-                color="#8B95A5"
-            />
-            <Label
-                text="Settings"
-                translation="[140, 68]"
-                font="font:SmallBoldSystemFont"
-                color="#FFFFFF"
-            />
-            <Label
                 text="Streaming Services"
-                translation="[60, 110]"
+                translation="[60, 75]"
                 font="font:MediumBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
-                text="Select the services you subscribe to. Press OK to toggle."
-                translation="[60, 143]"
+                text="Press OK to toggle. Press Back to return to Guide."
+                translation="[60, 108]"
                 font="font:SmallSystemFont"
                 color="#8B95A5"
             />
-            <Group id="serviceListGroup" translation="[60, 185]" />
+            <Group id="serviceListGroup" translation="[60, 150]" />
         </Rectangle>
 
         <EventFetchTask id="fetchTask" />

@@ -1,8 +1,7 @@
 sub Init()
     m.guidePanel = m.top.FindNode("guidePanel")
     m.settingsPanel = m.top.FindNode("settingsPanel")
-    m.sportSelectorBg = m.top.FindNode("sportSelectorBg")
-    m.sportSelectorLabel = m.top.FindNode("sportSelectorLabel")
+    m.sportPillsGroup = m.top.FindNode("sportPillsGroup")
     m.eventsGroup = m.top.FindNode("eventsGroup")
     m.loadingLabel = m.top.FindNode("loadingLabel")
     m.emptyLabel = m.top.FindNode("emptyLabel")
@@ -21,9 +20,12 @@ sub Init()
     m.focusRow = 0
     m.focusCol = 0
     m.focusMode = "filter"
+    m.sportPills = []
+
+    m.EVENTS_BASE_Y = 120
 
     m.dateLabel.text = GetTodayDateString()
-    updateSportLabel()
+    buildSportPills()
 
     m.fetchTask = m.top.FindNode("fetchTask")
     m.fetchTask.ObserveField("content", "onEventsLoaded")
@@ -31,18 +33,60 @@ sub Init()
 
     buildServiceList()
     m.fetchTask.control = "run"
-
     m.top.SetFocus(true)
-    updateFilterVisual()
+    updateSportPillVisuals()
 end sub
 
-' ─── SPORT FILTER ───
+' ─── SPORT FILTER PILLS ───
 
-sub updateSportLabel()
+sub buildSportPills()
     filters = GetSportFilters()
-    if m.sportFilterIdx >= 0 and m.sportFilterIdx < filters.Count()
-        m.sportSelectorLabel.text = filters[m.sportFilterIdx].label
-    end if
+    xPos = 0
+    for i = 0 to filters.Count() - 1
+        f = filters[i]
+        label = f.label
+        pillW = 55 + Len(label) * 6
+        if pillW < 60 then pillW = 60
+
+        pill = CreateObject("roSGNode", "Rectangle")
+        pill.width = pillW
+        pill.height = 34
+        pill.color = "#1A1F2E"
+        pill.translation = [xPos, 0]
+        pill.cornerRadius = 17
+
+        pillLbl = CreateObject("roSGNode", "Label")
+        pillLbl.text = label
+        pillLbl.font = "font:SmallestBoldSystemFont"
+        pillLbl.color = "#8B95A5"
+        pillLbl.width = pillW
+        pillLbl.horizAlign = "center"
+        pillLbl.translation = [0, 7]
+        pill.AppendChild(pillLbl)
+
+        m.sportPillsGroup.AppendChild(pill)
+        m.sportPills.Push({ node: pill, lbl: pillLbl, width: pillW })
+
+        xPos = xPos + pillW + 10
+    end for
+end sub
+
+sub updateSportPillVisuals()
+    for i = 0 to m.sportPills.Count() - 1
+        pill = m.sportPills[i]
+        if i = m.sportFilterIdx
+            if m.focusMode = "filter"
+                pill.node.color = "#FFFFFF"
+                pill.lbl.color = "#0D1117"
+            else
+                pill.node.color = "#252D3D"
+                pill.lbl.color = "#FFFFFF"
+            end if
+        else
+            pill.node.color = "#1A1F2E"
+            pill.lbl.color = "#8B95A5"
+        end if
+    end for
 end sub
 
 sub cycleSport(direction as Integer)
@@ -50,19 +94,11 @@ sub cycleSport(direction as Integer)
     m.sportFilterIdx = m.sportFilterIdx + direction
     if m.sportFilterIdx < 0 then m.sportFilterIdx = filters.Count() - 1
     if m.sportFilterIdx >= filters.Count() then m.sportFilterIdx = 0
-    updateSportLabel()
+    updateSportPillVisuals()
     m.scrollOffset = 0
     m.focusRow = 0
     m.focusCol = 0
     filterAndDisplayEvents()
-end sub
-
-sub updateFilterVisual()
-    if m.focusMode = "filter"
-        m.sportSelectorBg.color = "#252D3D"
-    else
-        m.sportSelectorBg.color = "#1A1F2E"
-    end if
 end sub
 
 ' ─── DATA ───
@@ -148,11 +184,11 @@ sub displayEvents(events as Object, currentSport as String)
     if currentSport = "all"
         renderBySport(events)
     else
-        renderFlat(events)
+        renderByTime(events)
     end if
 
-    m.eventsGroup.translation = [0, 0]
     m.scrollOffset = 0
+    m.eventsGroup.translation = [60, m.EVENTS_BASE_Y]
     if m.focusMode = "cards" then updateCardFocus()
 end sub
 
@@ -216,11 +252,11 @@ sub renderBySport(events as Object)
         end if
     end for
 
-    m.maxScroll = yPos - 520
+    m.maxScroll = yPos - 550
     if m.maxScroll < 0 then m.maxScroll = 0
 end sub
 
-sub renderFlat(events as Object)
+sub renderByTime(events as Object)
     liveNow = []
     startingSoon = []
     laterToday = []
@@ -267,31 +303,23 @@ sub renderFlat(events as Object)
     yPos = 0
 
     if liveNow.Count() > 0
-        yPos = renderTimeSection("Live Now", liveNow.Count().ToStr() + " game" + plural(liveNow.Count()), liveNow, yPos, true)
+        yPos = renderTimeSection("Live Now", liveNow.Count(), liveNow, yPos, true)
     end if
-
     if startingSoon.Count() > 0
-        yPos = renderTimeSection("Starting Soon", startingSoon.Count().ToStr() + " game" + plural(startingSoon.Count()), startingSoon, yPos, false)
+        yPos = renderTimeSection("Starting Soon", startingSoon.Count(), startingSoon, yPos, false)
     end if
-
     if laterToday.Count() > 0
-        yPos = renderTimeSection("Later Today", laterToday.Count().ToStr() + " game" + plural(laterToday.Count()), laterToday, yPos, false)
+        yPos = renderTimeSection("Later Today", laterToday.Count(), laterToday, yPos, false)
     end if
-
     if tomorrow.Count() > 0
-        yPos = renderTimeSection("Tomorrow", tomorrow.Count().ToStr() + " game" + plural(tomorrow.Count()), tomorrow, yPos, false)
+        yPos = renderTimeSection("Tomorrow", tomorrow.Count(), tomorrow, yPos, false)
     end if
 
-    m.maxScroll = yPos - 520
+    m.maxScroll = yPos - 550
     if m.maxScroll < 0 then m.maxScroll = 0
 end sub
 
-function plural(count as Integer) as String
-    if count = 1 then return ""
-    return "s"
-end function
-
-function renderTimeSection(title as String, subtitle as String, events as Object, yPos as Integer, isLive as Boolean) as Integer
+function renderTimeSection(title as String, count as Integer, events as Object, yPos as Integer, isLive as Boolean) as Integer
     titleLbl = CreateObject("roSGNode", "Label")
     titleLbl.text = title
     titleLbl.font = "font:MediumBoldSystemFont"
@@ -301,27 +329,33 @@ function renderTimeSection(title as String, subtitle as String, events as Object
 
     if isLive
         liveBadge = CreateObject("roSGNode", "Rectangle")
-        liveBadge.translation = [titleLbl.boundingRect()["width"] + 15, yPos + 4]
-        liveBadge.width = 60
-        liveBadge.height = 22
+        liveBadge.width = 65
+        liveBadge.height = 24
         liveBadge.color = "#FF3B30"
-        liveBadge.cornerRadius = 4
+        liveBadge.cornerRadius = 5
+        liveBadge.translation = [180, yPos + 3]
         liveLbl = CreateObject("roSGNode", "Label")
-        liveLbl.text = events.Count().ToStr() + " LIVE"
-        liveLbl.font = "font:SmallestSystemFont"
+        liveLbl.text = count.ToStr() + " LIVE"
+        liveLbl.font = "font:SmallestBoldSystemFont"
         liveLbl.color = "#FFFFFF"
-        liveLbl.translation = [6, 3]
+        liveLbl.translation = [8, 4]
         liveBadge.AppendChild(liveLbl)
         m.eventsGroup.AppendChild(liveBadge)
     end if
 
+    suffix = " game"
+    if count <> 1 then suffix = " games"
     subLbl = CreateObject("roSGNode", "Label")
     subLbl.font = "font:SmallSystemFont"
     subLbl.color = "#8B95A5"
-    subLbl.translation = [0, yPos + 30]
-    subLbl.text = subtitle
+    if isLive
+        subLbl.translation = [255, yPos + 5]
+    else
+        subLbl.translation = [180, yPos + 5]
+    end if
+    subLbl.text = count.ToStr() + suffix
     m.eventsGroup.AppendChild(subLbl)
-    yPos = yPos + 55
+    yPos = yPos + 38
 
     rowCards = []
     xPos = 0
@@ -346,6 +380,8 @@ function renderTimeSection(title as String, subtitle as String, events as Object
     return yPos
 end function
 
+' ─── CARD BUILDER ───
+
 function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     cardW = 275
     cardH = 185
@@ -355,7 +391,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     card.height = cardH
     card.color = "#1A1F2E"
     card.translation = [xPos, yPos]
-    card.cornerRadius = 8
+    card.cornerRadius = 10
 
     status = "upcoming"
     if evt.HasField("status") and evt.status <> invalid and evt.status <> ""
@@ -365,7 +401,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     badge = CreateObject("roSGNode", "Rectangle")
     badge.translation = [12, 12]
     badge.height = 24
-    badge.cornerRadius = 4
+    badge.cornerRadius = 5
     badgeTxt = CreateObject("roSGNode", "Label")
     badgeTxt.translation = [8, 3]
     badgeTxt.font = "font:SmallestSystemFont"
@@ -373,8 +409,8 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
 
     if status = "live"
         badge.color = "#FF3B30"
-        badgeTxt.text = "LIVE"
-        badge.width = 50
+        badgeTxt.text = chr(9679) + " LIVE"
+        badge.width = 65
     else if status = "upcoming"
         badge.color = "#2D3548"
         timeStr = ""
@@ -472,7 +508,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     lgL.text = UCase(league)
     card.AppendChild(lgL)
 
-    svcY = 130
+    svcY = 132
     svcX = 12
     if evt.HasField("availableServices") and evt.availableServices <> invalid
         badgeCount = 0
@@ -482,11 +518,9 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             if svc <> invalid
                 shortName = svc.name
                 if svc.DoesExist("short") then shortName = svc.short
-
-                bw = 75
-                if Len(shortName) <= 4 then bw = 52
-                if Len(shortName) <= 5 then bw = 60
-
+                bw = 50 + Len(shortName) * 5
+                if bw < 52 then bw = 52
+                if bw > 80 then bw = 80
                 if svcX + bw > cardW - 10 then exit for
 
                 svcBg = CreateObject("roSGNode", "Rectangle")
@@ -526,37 +560,35 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     border.width = cardW
     border.height = cardH
     border.color = "#00000000"
-    border.translation = [0, 0]
     border.visible = false
 
-    borderTop = CreateObject("roSGNode", "Rectangle")
-    borderTop.width = cardW
-    borderTop.height = 3
-    borderTop.color = "#FFFFFF"
-    border.AppendChild(borderTop)
+    bTop = CreateObject("roSGNode", "Rectangle")
+    bTop.width = cardW
+    bTop.height = 3
+    bTop.color = "#FFFFFF"
+    border.AppendChild(bTop)
 
-    borderBottom = CreateObject("roSGNode", "Rectangle")
-    borderBottom.width = cardW
-    borderBottom.height = 3
-    borderBottom.color = "#FFFFFF"
-    borderBottom.translation = [0, cardH - 3]
-    border.AppendChild(borderBottom)
+    bBot = CreateObject("roSGNode", "Rectangle")
+    bBot.width = cardW
+    bBot.height = 3
+    bBot.color = "#FFFFFF"
+    bBot.translation = [0, cardH - 3]
+    border.AppendChild(bBot)
 
-    borderLeft = CreateObject("roSGNode", "Rectangle")
-    borderLeft.width = 3
-    borderLeft.height = cardH
-    borderLeft.color = "#FFFFFF"
-    border.AppendChild(borderLeft)
+    bLeft = CreateObject("roSGNode", "Rectangle")
+    bLeft.width = 3
+    bLeft.height = cardH
+    bLeft.color = "#FFFFFF"
+    border.AppendChild(bLeft)
 
-    borderRight = CreateObject("roSGNode", "Rectangle")
-    borderRight.width = 3
-    borderRight.height = cardH
-    borderRight.color = "#FFFFFF"
-    borderRight.translation = [cardW - 3, 0]
-    border.AppendChild(borderRight)
+    bRight = CreateObject("roSGNode", "Rectangle")
+    bRight.width = 3
+    bRight.height = cardH
+    bRight.color = "#FFFFFF"
+    bRight.translation = [cardW - 3, 0]
+    border.AppendChild(bRight)
 
     card.AppendChild(border)
-
     return card
 end function
 
@@ -569,11 +601,10 @@ sub updateCardFocus()
             cardInfo = row[c]
             isFocused = (r = m.focusRow and c = m.focusCol and m.focusMode = "cards")
             if isFocused
-                cardInfo.node.color = "#2A3350"
+                cardInfo.node.color = "#252D3D"
             else
                 cardInfo.node.color = "#1A1F2E"
             end if
-
             childCount = cardInfo.node.GetChildCount()
             for i = 0 to childCount - 1
                 child = cardInfo.node.GetChild(i)
@@ -589,19 +620,19 @@ sub updateCardFocus()
             cardInfo = row[m.focusCol]
             cardY = cardInfo.node.translation[1]
             visibleTop = m.scrollOffset
-            visibleBottom = m.scrollOffset + 520
+            visibleBottom = m.scrollOffset + 550
 
             if cardY < visibleTop
                 m.scrollOffset = cardY - 30
                 if m.scrollOffset < 0 then m.scrollOffset = 0
             else if cardY + 185 > visibleBottom
-                m.scrollOffset = cardY + 185 - 520
+                m.scrollOffset = cardY + 185 - 550
             end if
-            m.eventsGroup.translation = [0, -m.scrollOffset]
+            m.eventsGroup.translation = [60, m.EVENTS_BASE_Y - m.scrollOffset]
         end if
     end if
 
-    updateFilterVisual()
+    updateSportPillVisuals()
 end sub
 
 sub launchSelectedCard()
@@ -635,7 +666,7 @@ sub buildServiceList()
         row.height = 44
         row.color = "#1A1F2E"
         row.translation = [0, yPos]
-        row.cornerRadius = 6
+        row.cornerRadius = 8
 
         isSelected = false
         for each selId in m.selectedServices
@@ -720,7 +751,7 @@ sub showGuide()
     m.settingsPanel.visible = false
     m.focusMode = "filter"
     m.top.SetFocus(true)
-    updateFilterVisual()
+    updateSportPillVisuals()
     filterAndDisplayEvents()
 end sub
 
@@ -803,8 +834,10 @@ function handleGuideKeys(key as String) as Boolean
                 updateCardFocus()
             else
                 m.focusMode = "filter"
+                m.scrollOffset = 0
+                m.eventsGroup.translation = [60, m.EVENTS_BASE_Y]
                 updateCardFocus()
-                updateFilterVisual()
+                updateSportPillVisuals()
             end if
             return true
         end if
@@ -843,8 +876,10 @@ function handleGuideKeys(key as String) as Boolean
 
         if key = "back"
             m.focusMode = "filter"
+            m.scrollOffset = 0
+            m.eventsGroup.translation = [60, m.EVENTS_BASE_Y]
             updateCardFocus()
-            updateFilterVisual()
+            updateSportPillVisuals()
             return true
         end if
 
