@@ -15,7 +15,7 @@ splash_color=#1a1a2e
 splash_min_time=1500
 
 ui_resolutions=hd
-bs_const=debug=true
+bs_const=debug=false
 
 supports_input_launch=1
 confirm_partner_button=1

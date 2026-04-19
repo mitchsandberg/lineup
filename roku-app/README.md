@@ -13,13 +13,9 @@ Roku channel (BrightScript/SceneGraph) for **Lineup**, the live sports TV guide.
    - On the Roku remote, press: Home 3x, Up 2x, Right, Left, Right, Left, Right
    - Note the IP address shown and set a password
 
-2. **Configure the API server URL:**
-   - Edit `source/utils.brs` and replace `YOUR_SERVER_IP` in `GetApiBaseUrl()` with your computer's local IP address (e.g., `192.168.1.100`)
-
-3. **Start the backend server:**
-   ```bash
-   cd ../tv-guide-app/server && npm run dev
-   ```
+2. **API server:**
+   - The app points to the production API at `https://lineup-api.onrender.com` by default
+   - To use a local server instead, edit `source/utils.brs` and change `GetApiBaseUrl()` to your local IP (e.g., `http://192.168.1.100:3001`)
 
 ## Build & Deploy
 

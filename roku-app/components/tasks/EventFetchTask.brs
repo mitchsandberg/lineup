@@ -9,7 +9,7 @@ sub fetchEvents()
     request.SetUrl(url)
     request.SetCertificatesFile("common:/certs/ca-bundle.crt")
     request.AddHeader("Content-Type", "application/json")
-    request.AddHeader("User-Agent", "SportsGuideRoku/1.0")
+    request.AddHeader("User-Agent", "Lineup/1.0")
     request.InitClientCertificates()
     request.EnableEncodings(true)
 

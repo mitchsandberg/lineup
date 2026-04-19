@@ -308,7 +308,19 @@ end sub
 
 function handleDeepLink(params as Object) as Boolean
     if params = invalid then return false
-    return true
+
+    contentId = ""
+    if params.DoesExist("contentId") then contentId = params.contentId
+
+    if contentId <> ""
+        svc = GetServiceById(contentId)
+        if svc <> invalid
+            LaunchChannel(svc.rokuChannelId, "")
+            return true
+        end if
+    end if
+
+    return false
 end function
 
 function OnKeyEvent(key as String, press as Boolean) as Boolean
