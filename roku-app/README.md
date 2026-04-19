@@ -71,12 +71,67 @@ roku-app/
 
 ## Streaming Service Channel IDs
 
-| Service      | Roku Channel ID |
-|-------------|----------------|
-| YouTube TV  | 195316         |
-| Hulu        | 46041          |
-| ESPN        | 34376          |
-| Peacock     | 593099         |
-| Prime Video | 13             |
-| Apple TV+   | 551012         |
-| MLB.TV      | 46246          |
+| Service       | Roku Channel ID |
+|--------------|----------------|
+| YouTube TV   | 195316         |
+| Hulu         | 46041          |
+| ESPN+        | 34376          |
+| Peacock      | 593099         |
+| Prime Video  | 13             |
+| Paramount+   | 31440          |
+| Apple TV+    | 551012         |
+| MLB.TV       | 46246          |
+| NBA League Pass | 86065       |
+| NFL+         | 241116         |
+| Sunday Ticket | 195316        |
+
+## Roku Store Submission Requirements
+
+The channel works for sideloading and development. To publish to the Roku Channel Store, the following items are required:
+
+### Required Before Submission
+
+1. **App Icons and Splash Screens**
+   - Channel poster art: 540x405 HD (required for store listing)
+   - Channel icon: 336x210 FHD
+   - Splash screen: 1920x1080 FHD
+   - Place all images in the `images/` directory and reference in `manifest`
+
+2. **Manifest Changes**
+   - Set `bs_const=debug=false` (currently `true`)
+   - Add a real `mm_icon_focus_hd` and `mm_icon_focus_fhd` pointing to actual image files
+   - Add `splash_screen_hd` and `splash_screen_fhd`
+
+3. **Hosted Backend API**
+   - Deploy the backend server to a public host (e.g., Railway, Render, Fly.io, AWS)
+   - Update `GetApiBaseUrl()` in `source/utils.brs` with the production URL
+   - Ensure HTTPS and reasonable uptime
+
+4. **Privacy Policy**
+   - Create a hosted privacy policy page (required by Roku)
+   - Must describe data collection practices (the app collects no user data beyond local prefs)
+
+5. **Roku Developer Account**
+   - Sign up at https://developer.roku.com
+   - Enroll in the Roku Developer Program
+   - Pay the one-time developer fee (if applicable)
+
+6. **Static Channel Certification**
+   - Roku reviews all channels before publishing
+   - Must pass automated and manual testing
+   - Common failure reasons: crashes, missing error handling, slow load times
+   - Run the Roku Static Analysis tool locally before submitting
+
+### Nice to Have
+
+- **Store Description & Screenshots** -- Write compelling copy and capture screenshots for the store listing
+- **Category Selection** -- "Sports" category on the Roku Channel Store
+- **Customer Support Email** -- Required for published channels
+
+### Submission Process
+
+1. Build a release package: `make build` (with `debug=false`)
+2. Log in to https://developer.roku.com/developer-channels
+3. Create a new Public Channel
+4. Upload the `.zip` package, icons, screenshots, and fill in metadata
+5. Submit for certification review (typically 1-2 weeks)
