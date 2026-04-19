@@ -157,17 +157,21 @@ sub filterAndDisplayEvents()
 
         if shouldInclude
             hasService = false
-            services = invalid
-            if evt.HasField("availableServices") then services = evt.availableServices
-            if services <> invalid
-                for each svcId in services
+            csv = ""
+            if evt.HasField("servicesCsv") and evt.servicesCsv <> invalid
+                csv = evt.servicesCsv
+            end if
+            svcIds = SplitCsv(csv)
+            if svcIds.Count() > 0
+                for each svcId in svcIds
                     if selectedSvcSet.DoesExist(svcId)
                         hasService = true
                         exit for
                     end if
                 end for
+            else
+                hasService = true
             end if
-            if services = invalid or services.Count() = 0 then hasService = true
             if hasService then filtered.Push(evt)
         end if
     end for
@@ -454,7 +458,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     if homeTeam <> "" and awayTeam <> ""
         hLbl = CreateObject("roSGNode", "Label")
         hLbl.translation = [12, 48]
-        hLbl.width = 200
+        hLbl.width = 185
         hLbl.font = "font:SmallBoldSystemFont"
         hLbl.color = "#FFFFFF"
         hLbl.maxLines = 1
@@ -463,7 +467,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
 
         aLbl = CreateObject("roSGNode", "Label")
         aLbl.translation = [12, 72]
-        aLbl.width = 200
+        aLbl.width = 185
         aLbl.font = "font:SmallBoldSystemFont"
         aLbl.color = "#FFFFFF"
         aLbl.maxLines = 1
@@ -477,8 +481,8 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             if evt.HasField("awayScore") and evt.awayScore <> invalid then as2 = evt.awayScore
 
             hsL = CreateObject("roSGNode", "Label")
-            hsL.translation = [cardW - 45, 48]
-            hsL.width = 35
+            hsL.translation = [cardW - 60, 48]
+            hsL.width = 50
             hsL.horizAlign = "right"
             hsL.font = "font:SmallBoldSystemFont"
             hsL.color = "#FFFFFF"
@@ -486,8 +490,8 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             card.AppendChild(hsL)
 
             asL = CreateObject("roSGNode", "Label")
-            asL.translation = [cardW - 45, 72]
-            asL.width = 35
+            asL.translation = [cardW - 60, 72]
+            asL.width = 50
             asL.horizAlign = "right"
             asL.font = "font:SmallBoldSystemFont"
             asL.color = "#FFFFFF"
@@ -516,40 +520,43 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
 
     svcY = 132
     svcX = 12
-    if evt.HasField("availableServices") and evt.availableServices <> invalid
-        badgeCount = 0
-        for each svcId in evt.availableServices
-            if badgeCount >= 2 then exit for
-            svc = GetServiceById(svcId)
-            if svc <> invalid
-                shortName = svc.name
-                if svc.DoesExist("short") then shortName = svc.short
-                bw = 80
-                if Len(shortName) <= 4 then bw = 60
-                if svcX + bw > cardW - 10 then exit for
-
-                svcBg = CreateObject("roSGNode", "Rectangle")
-                svcBg.width = bw
-                svcBg.height = 22
-                svcBg.color = svc.color
-                svcBg.translation = [svcX, svcY]
-                svcBg.cornerRadius = 4
-
-                svcLbl = CreateObject("roSGNode", "Label")
-                svcLbl.text = shortName
-                svcLbl.font = "font:SmallestSystemFont"
-                svcLbl.color = "#FFFFFF"
-                svcLbl.translation = [4, 2]
-                svcLbl.width = bw - 8
-                svcLbl.horizAlign = "center"
-                svcBg.AppendChild(svcLbl)
-                card.AppendChild(svcBg)
-
-                svcX = svcX + bw + 6
-                badgeCount = badgeCount + 1
-            end if
-        end for
+    svcCsv = ""
+    if evt.HasField("servicesCsv") and evt.servicesCsv <> invalid
+        svcCsv = evt.servicesCsv
     end if
+    svcIdList = SplitCsv(svcCsv)
+    badgeCount = 0
+    for each svcId in svcIdList
+        if badgeCount >= 2 then exit for
+        svc = GetServiceById(svcId)
+        if svc <> invalid
+            shortName = svc.name
+            if svc.DoesExist("short") then shortName = svc.short
+            bw = 80
+            if Len(shortName) <= 4 then bw = 60
+            if svcX + bw > cardW - 10 then exit for
+
+            svcBg = CreateObject("roSGNode", "Rectangle")
+            svcBg.width = bw
+            svcBg.height = 22
+            svcBg.color = svc.color
+            svcBg.translation = [svcX, svcY]
+            svcBg.cornerRadius = 4
+
+            svcLbl = CreateObject("roSGNode", "Label")
+            svcLbl.text = shortName
+            svcLbl.font = "font:SmallestSystemFont"
+            svcLbl.color = "#FFFFFF"
+            svcLbl.translation = [4, 2]
+            svcLbl.width = bw - 8
+            svcLbl.horizAlign = "center"
+            svcBg.AppendChild(svcLbl)
+            card.AppendChild(svcBg)
+
+            svcX = svcX + bw + 6
+            badgeCount = badgeCount + 1
+        end if
+    end for
 
     watchHint = CreateObject("roSGNode", "Label")
     watchHint.id = "watchHint"
@@ -650,16 +657,11 @@ sub launchSelectedCard()
     if cardInfo = invalid or cardInfo.evt = invalid then return
 
     evt = cardInfo.evt
-    if not evt.HasField("availableServices") then return
-    rawServices = evt.availableServices
-    if rawServices = invalid then return
-
-    svcIds = []
-    for each svcId in rawServices
-        if svcId <> invalid and svcId <> ""
-            svcIds.Push(svcId)
-        end if
-    end for
+    csv = ""
+    if evt.HasField("servicesCsv") and evt.servicesCsv <> invalid
+        csv = evt.servicesCsv
+    end if
+    svcIds = SplitCsv(csv)
     if svcIds.Count() = 0 then return
 
     installed = []

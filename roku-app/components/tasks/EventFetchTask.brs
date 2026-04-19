@@ -73,7 +73,7 @@ function parseEventsToContent(events as Object) as Object
             awayTeam: safeStr(evt.awayTeam),
             homeScore: safeStr(evt.homeScore),
             awayScore: safeStr(evt.awayScore),
-            availableServices: safeArray(evt.availableServices)
+            servicesCsv: joinArray(evt.availableServices)
         })
     end for
 
@@ -85,8 +85,13 @@ function safeStr(val as Dynamic) as String
     return val.ToStr()
 end function
 
-function safeArray(val as Dynamic) as Object
-    if val = invalid then return []
-    if Type(val) = "roArray" then return val
-    return []
+function joinArray(val as Dynamic) as String
+    if val = invalid then return ""
+    if Type(val) <> "roArray" then return ""
+    result = ""
+    for each item in val
+        if result <> "" then result = result + ","
+        result = result + item
+    end for
+    return result
 end function

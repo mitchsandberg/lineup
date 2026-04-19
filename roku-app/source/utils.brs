@@ -50,6 +50,17 @@ function IsChannelInstalled(channelId as String) as Boolean
     return dev.IsChannelInstalled(channelId)
 end function
 
+function SplitCsv(csv as String) as Object
+    result = []
+    if csv = invalid or csv = "" then return result
+    parts = csv.Split(",")
+    for each p in parts
+        trimmed = p.Trim()
+        if trimmed <> "" then result.Push(trimmed)
+    end for
+    return result
+end function
+
 sub LaunchChannel(channelId as String, params as String)
     url = "http://127.0.0.1:8060/launch/" + channelId
     if params <> "" and params <> invalid
