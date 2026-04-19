@@ -221,11 +221,111 @@ sub renderBySport(events as Object)
 end sub
 
 sub renderFlat(events as Object)
+    liveNow = []
+    startingSoon = []
+    laterToday = []
+    tomorrow = []
+
+    now = CreateObject("roDateTime")
+    nowSec = now.AsSeconds()
+    now.ToLocalTime()
+    todayDay = now.GetDayOfMonth()
+
+    for each evt in events
+        status = "upcoming"
+        if evt.HasField("status") and evt.status <> invalid then status = evt.status
+
+        if status = "live"
+            liveNow.Push(evt)
+        else
+            startTime = ""
+            if evt.HasField("startTime") and evt.startTime <> invalid
+                startTime = evt.startTime
+            end if
+            if startTime <> ""
+                evtDt = CreateObject("roDateTime")
+                evtDt.FromISO8601String(startTime)
+                evtSec = evtDt.AsSeconds()
+                diffMin = (evtSec - nowSec) / 60
+
+                evtDt.ToLocalTime()
+                evtDay = evtDt.GetDayOfMonth()
+
+                if diffMin <= 60 and diffMin > 0
+                    startingSoon.Push(evt)
+                else if evtDay = todayDay
+                    laterToday.Push(evt)
+                else
+                    tomorrow.Push(evt)
+                end if
+            else
+                laterToday.Push(evt)
+            end if
+        end if
+    end for
+
     yPos = 0
+
+    if liveNow.Count() > 0
+        yPos = renderTimeSection("Live Now", liveNow.Count().ToStr() + " game" + plural(liveNow.Count()), liveNow, yPos, true)
+    end if
+
+    if startingSoon.Count() > 0
+        yPos = renderTimeSection("Starting Soon", startingSoon.Count().ToStr() + " game" + plural(startingSoon.Count()), startingSoon, yPos, false)
+    end if
+
+    if laterToday.Count() > 0
+        yPos = renderTimeSection("Later Today", laterToday.Count().ToStr() + " game" + plural(laterToday.Count()), laterToday, yPos, false)
+    end if
+
+    if tomorrow.Count() > 0
+        yPos = renderTimeSection("Tomorrow", tomorrow.Count().ToStr() + " game" + plural(tomorrow.Count()), tomorrow, yPos, false)
+    end if
+
+    m.maxScroll = yPos - 520
+    if m.maxScroll < 0 then m.maxScroll = 0
+end sub
+
+function plural(count as Integer) as String
+    if count = 1 then return ""
+    return "s"
+end function
+
+function renderTimeSection(title as String, subtitle as String, events as Object, yPos as Integer, isLive as Boolean) as Integer
+    titleLbl = CreateObject("roSGNode", "Label")
+    titleLbl.text = title
+    titleLbl.font = "font:MediumBoldSystemFont"
+    titleLbl.color = "#FFFFFF"
+    titleLbl.translation = [0, yPos]
+    m.eventsGroup.AppendChild(titleLbl)
+
+    if isLive
+        liveBadge = CreateObject("roSGNode", "Rectangle")
+        liveBadge.translation = [titleLbl.boundingRect()["width"] + 15, yPos + 4]
+        liveBadge.width = 60
+        liveBadge.height = 22
+        liveBadge.color = "#FF3B30"
+        liveBadge.cornerRadius = 4
+        liveLbl = CreateObject("roSGNode", "Label")
+        liveLbl.text = events.Count().ToStr() + " LIVE"
+        liveLbl.font = "font:SmallestSystemFont"
+        liveLbl.color = "#FFFFFF"
+        liveLbl.translation = [6, 3]
+        liveBadge.AppendChild(liveLbl)
+        m.eventsGroup.AppendChild(liveBadge)
+    end if
+
+    subLbl = CreateObject("roSGNode", "Label")
+    subLbl.font = "font:SmallSystemFont"
+    subLbl.color = "#8B95A5"
+    subLbl.translation = [0, yPos + 30]
+    subLbl.text = subtitle
+    m.eventsGroup.AppendChild(subLbl)
+    yPos = yPos + 55
+
+    rowCards = []
     xPos = 0
     cardCount = 0
-    rowCards = []
-
     for each evt in events
         if cardCount > 0 and cardCount mod 4 = 0
             m.cardGrid.Push(rowCards)
@@ -239,14 +339,12 @@ sub renderFlat(events as Object)
         rowCards.Push({ node: card, evt: evt })
         xPos = xPos + 285
         cardCount = cardCount + 1
-
-        if cardCount >= 20 then exit for
     end for
 
     if rowCards.Count() > 0 then m.cardGrid.Push(rowCards)
-    m.maxScroll = yPos + 200 - 520
-    if m.maxScroll < 0 then m.maxScroll = 0
-end sub
+    yPos = yPos + 210
+    return yPos
+end function
 
 function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     cardW = 275
@@ -385,24 +483,30 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
                 shortName = svc.name
                 if svc.DoesExist("short") then shortName = svc.short
 
+                bw = 75
+                if Len(shortName) <= 4 then bw = 52
+                if Len(shortName) <= 5 then bw = 60
+
+                if svcX + bw > cardW - 10 then exit for
+
                 svcBg = CreateObject("roSGNode", "Rectangle")
-                svcBg.width = 58
-                svcBg.height = 20
+                svcBg.width = bw
+                svcBg.height = 22
                 svcBg.color = svc.color
                 svcBg.translation = [svcX, svcY]
-                svcBg.cornerRadius = 3
+                svcBg.cornerRadius = 4
 
                 svcLbl = CreateObject("roSGNode", "Label")
                 svcLbl.text = shortName
                 svcLbl.font = "font:SmallestSystemFont"
                 svcLbl.color = "#FFFFFF"
-                svcLbl.translation = [3, 1]
-                svcLbl.width = 52
+                svcLbl.translation = [4, 2]
+                svcLbl.width = bw - 8
                 svcLbl.horizAlign = "center"
                 svcBg.AppendChild(svcLbl)
                 card.AppendChild(svcBg)
 
-                svcX = svcX + 63
+                svcX = svcX + bw + 6
                 badgeCount = badgeCount + 1
             end if
         end for
