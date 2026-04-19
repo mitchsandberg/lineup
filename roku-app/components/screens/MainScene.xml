@@ -110,7 +110,7 @@
             >
                 <Label
                     id="pickerTitle"
-                    text="Choose a service"
+                    text="Available on"
                     translation="[0, 20]"
                     width="400"
                     horizAlign="center"
@@ -118,7 +118,7 @@
                     color="#FFFFFF"
                 />
                 <Label
-                    text="Select where to watch"
+                    text="Press Home, then open one of these apps"
                     translation="[0, 52]"
                     width="400"
                     horizAlign="center"
@@ -130,6 +130,5 @@
         </Rectangle>
 
         <EventFetchTask id="fetchTask" />
-        <LaunchTask id="launchTask" />
     </children>
 </component>

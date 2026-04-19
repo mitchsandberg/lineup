@@ -74,19 +74,6 @@ function SplitCsv(csv as String) as Object
     return result
 end function
 
-sub LaunchChannel(channelId as String, params as String)
-    url = "http://127.0.0.1:8060/launch/" + channelId
-    if params <> "" and params <> invalid
-        url = url + "?" + params
-    end if
-
-    task = m.top.FindNode("launchTask")
-    if task <> invalid
-        task.control = "stop"
-        task.launchUrl = url
-        task.control = "run"
-    end if
-end sub
 
 function ReadRegistrySetting(section as String, key as String) as Dynamic
     sec = CreateObject("roRegistrySection", section)

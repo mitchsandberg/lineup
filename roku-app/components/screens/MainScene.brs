@@ -558,7 +558,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     watchHint.translation = [12, cardH - 22]
     watchHint.font = "font:SmallestSystemFont"
     watchHint.color = "#30D158"
-    watchHint.text = "Press OK to watch"
+    watchHint.text = "OK for details"
     watchHint.visible = false
     card.AppendChild(watchHint)
 
@@ -666,11 +666,7 @@ sub launchSelectedCard()
     end for
 
     if matched.Count() = 0 then return
-    if matched.Count() = 1
-        LaunchChannel(matched[0].rokuChannelId, "")
-    else
-        showServicePicker(matched)
-    end if
+    showServicePicker(matched)
 end sub
 
 sub showServicePicker(services as Object)
@@ -734,10 +730,7 @@ sub hideServicePicker()
 end sub
 
 sub launchPickerSelection()
-    if m.pickerFocusIdx < 0 or m.pickerFocusIdx >= m.pickerServices.Count() then return
-    svc = m.pickerServices[m.pickerFocusIdx]
     hideServicePicker()
-    LaunchChannel(svc.rokuChannelId, "")
 end sub
 
 ' ─── SETTINGS ───
