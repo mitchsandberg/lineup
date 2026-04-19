@@ -103,29 +103,29 @@
         >
             <Rectangle
                 id="pickerBox"
-                width="400"
+                width="460"
                 height="300"
                 color="#1A1F2E"
-                translation="[440, 210]"
+                translation="[410, 210]"
             >
                 <Label
                     id="pickerTitle"
                     text="Available on"
-                    translation="[0, 20]"
-                    width="400"
+                    translation="[20, 20]"
+                    width="420"
                     horizAlign="center"
                     font="font:MediumBoldSystemFont"
                     color="#FFFFFF"
                 />
                 <Label
-                    text="Press Home, then open one of these apps"
-                    translation="[0, 52]"
-                    width="400"
+                    text="Press Home and open the app"
+                    translation="[20, 52]"
+                    width="420"
                     horizAlign="center"
                     font="font:SmallSystemFont"
                     color="#8B95A5"
                 />
-                <Group id="pickerItemsGroup" translation="[30, 90]" />
+                <Group id="pickerItemsGroup" translation="[40, 90]" />
             </Rectangle>
         </Rectangle>
 

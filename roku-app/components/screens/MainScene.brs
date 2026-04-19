@@ -678,7 +678,7 @@ sub showServicePicker(services as Object)
     for i = 0 to services.Count() - 1
         svc = services[i]
         row = CreateObject("roSGNode", "Rectangle")
-        row.width = 340
+        row.width = 380
         row.height = 42
         row.color = "#252D3D"
         row.translation = [0, yPos]
@@ -695,17 +695,17 @@ sub showServicePicker(services as Object)
         lbl.font = "font:SmallBoldSystemFont"
         lbl.color = "#FFFFFF"
         lbl.translation = [36, 9]
-        lbl.width = 290
+        lbl.width = 330
         row.AppendChild(lbl)
 
         m.pickerItemsGroup.AppendChild(row)
         yPos = yPos + 48
     end for
 
-    boxH = 100 + services.Count() * 48
+    boxH = 110 + services.Count() * 48
     if boxH > 500 then boxH = 500
     m.pickerBox.height = boxH
-    m.pickerBox.translation = [440, (720 - boxH) / 2]
+    m.pickerBox.translation = [410, (720 - boxH) / 2]
 
     m.focusMode = "picker"
     m.pickerOverlay.visible = true
