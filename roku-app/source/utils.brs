@@ -45,6 +45,18 @@ function GetStatusLabel(status as String) as String
     return "FINAL"
 end function
 
+function GetMascotName(fullName as String) as String
+    if fullName = invalid or fullName = "" then return ""
+    lastSpace = 0
+    for i = 1 to Len(fullName)
+        if Mid(fullName, i, 1) = " " then lastSpace = i
+    end for
+    if lastSpace > 0 and lastSpace < Len(fullName)
+        return Mid(fullName, lastSpace + 1)
+    end if
+    return fullName
+end function
+
 function SplitCsv(csv as String) as Object
     result = []
     if csv = invalid or csv = "" then return result

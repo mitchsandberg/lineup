@@ -454,20 +454,20 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     if homeTeam <> "" and awayTeam <> ""
         hLbl = CreateObject("roSGNode", "Label")
         hLbl.translation = [12, 48]
-        hLbl.width = 185
+        hLbl.width = 200
         hLbl.font = "font:SmallBoldSystemFont"
         hLbl.color = "#FFFFFF"
         hLbl.maxLines = 1
-        hLbl.text = homeTeam
+        hLbl.text = GetMascotName(homeTeam)
         card.AppendChild(hLbl)
 
         aLbl = CreateObject("roSGNode", "Label")
         aLbl.translation = [12, 72]
-        aLbl.width = 185
+        aLbl.width = 200
         aLbl.font = "font:SmallBoldSystemFont"
         aLbl.color = "#FFFFFF"
         aLbl.maxLines = 1
-        aLbl.text = awayTeam
+        aLbl.text = GetMascotName(awayTeam)
         card.AppendChild(aLbl)
 
         if status = "live" or status = "final"
