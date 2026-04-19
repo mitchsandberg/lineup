@@ -82,6 +82,7 @@ sub LaunchChannel(channelId as String, params as String)
 
     task = m.top.FindNode("launchTask")
     if task <> invalid
+        task.control = "stop"
         task.launchUrl = url
         task.control = "run"
     end if

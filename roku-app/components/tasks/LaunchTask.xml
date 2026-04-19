@@ -11,6 +11,7 @@
         end sub
 
         sub doLaunch()
+            Sleep(50)
             url = m.top.launchUrl
             if url = "" or url = invalid then return
 
@@ -18,8 +19,9 @@
             transfer.SetUrl(url)
             port = CreateObject("roMessagePort")
             transfer.SetMessagePort(port)
-            transfer.AsyncPostFromString("")
-            Wait(3000, port)
+            if transfer.AsyncPostFromString("")
+                Wait(5000, port)
+            end if
         end sub
     ]]>
     </script>
