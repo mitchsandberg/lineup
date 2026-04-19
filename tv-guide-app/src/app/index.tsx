@@ -130,7 +130,7 @@ export default function GuideScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0D1117',
     ...(Platform.OS === 'web' ? { height: '100vh' as unknown as number } : {}),
   },
   header: {
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   headerSubtitle: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 22,
     fontWeight: '500',
   },
@@ -159,13 +159,13 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0D1117',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
   },
   loadingText: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 22,
   },
   errorText: {
@@ -185,13 +185,13 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#333333',
+    borderColor: '#2D3548',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   emptyIconText: {
-    color: '#555555',
+    color: '#4A5568',
     fontSize: 36,
     fontWeight: '300',
   },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptySubtext: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 20,
     textAlign: 'center',
     maxWidth: 400,

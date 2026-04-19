@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   count: {
-    color: '#636366',
+    color: '#4A5568',
     fontSize: 18,
     fontWeight: '500',
   },

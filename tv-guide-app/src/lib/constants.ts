@@ -17,8 +17,8 @@ export const SPORT_FILTERS: { id: SportCategory; label: string; icon: string }[]
 
 export const STATUS_COLORS = {
   live: '#FF3B30',
-  upcoming: '#48484A',
-  final: '#636366',
+  upcoming: '#2D3548',
+  final: '#4A5568',
 } as const;
 
 export const TV_SIZES = {

@@ -25,12 +25,12 @@ sub onContentChanged()
         m.statusLabel.text = chr(9679) + " LIVE"
         m.statusBadge.width = 70
     else if status = "upcoming"
-        m.statusBadge.color = "#333333"
+        m.statusBadge.color = "#2D3548"
         timeStr = FormatEventTime(content.startTime)
         m.statusLabel.text = timeStr
         m.statusBadge.width = 80
     else
-        m.statusBadge.color = "#333333"
+        m.statusBadge.color = "#4A5568"
         m.statusLabel.text = "FINAL"
         m.statusBadge.width = 60
     end if
@@ -90,8 +90,8 @@ sub onFocusChanged()
     m.focusBorder.visible = focused
     m.watchHint.visible = focused
     if focused
-        m.cardBg.color = "#2C2C2E"
+        m.cardBg.color = "#252D3D"
     else
-        m.cardBg.color = "#1C1C1E"
+        m.cardBg.color = "#1A1F2E"
     end if
 end sub

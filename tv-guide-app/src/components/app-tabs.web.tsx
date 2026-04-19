@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#1A1F2E',
     gap: 8,
   },
   brandText: {
@@ -94,13 +94,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   tabButtonActive: {
-    backgroundColor: '#3A3A3C',
+    backgroundColor: '#2D3548',
   },
   tabButtonHover: {
     opacity: 0.8,
   },
   tabText: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 16,
     fontWeight: '600',
   },

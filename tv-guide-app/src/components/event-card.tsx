@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   card: {
     height: TV_SIZES.cardHeight,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#1A1F2E',
     borderRadius: 16,
     padding: 20,
     justifyContent: 'space-between',
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   cardFocused: {
     borderColor: TV_SIZES.focusBorderColor,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#252D3D',
   },
   topRow: {
     flexDirection: 'row',
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   channelText: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: TV_SIZES.badgeSize,
     fontWeight: '600',
   },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   leagueText: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: TV_SIZES.subtitleSize,
     fontWeight: '500',
   },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   watchHintText: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 13,
     fontWeight: '500',
   },

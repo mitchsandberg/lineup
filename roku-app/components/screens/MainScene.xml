@@ -13,7 +13,7 @@
             id="background"
             width="1280"
             height="720"
-            color="#0D0D0D"
+            color="#0D1117"
         >
             <!-- Header -->
             <LayoutGroup
@@ -36,7 +36,7 @@
                 id="dateLabel"
                 translation="[1060, 38]"
                 font="font:SmallSystemFont"
-                color="#8E8E93"
+                color="#8B95A5"
                 horizAlign="right"
                 width="180"
             />
@@ -52,7 +52,7 @@
                     id="tabButtons"
                     buttons="[&quot;Guide&quot;, &quot;Settings&quot;]"
                     focusedColor="#FFFFFF"
-                    color="#8E8E93"
+                    color="#8B95A5"
                     focusedFont="font:SmallBoldSystemFont"
                     font="font:SmallSystemFont"
                 />
@@ -73,7 +73,7 @@
                     focusedColor="#FFFFFF"
                     color="#8E8E93"
                     drawFocusFeedback="true"
-                    focusBitmapBlendColor="#333333"
+                    focusBitmapBlendColor="#1A1F2E"
                 />
             </LayoutGroup>
 
@@ -90,7 +90,7 @@
                 showRowCounter="[true]"
                 rowLabelColor="#FFFFFF"
                 rowLabelFont="font:MediumBoldSystemFont"
-                focusBitmapBlendColor="#333333"
+                focusBitmapBlendColor="#252D3D"
                 drawFocusFeedback="true"
                 vertFocusAnimationStyle="floatingFocus"
             />
@@ -113,7 +113,7 @@
                     id="loadingLabel"
                     text="Loading sports..."
                     font="font:SmallSystemFont"
-                    color="#8E8E93"
+                    color="#8B95A5"
                 />
             </LayoutGroup>
 
@@ -123,7 +123,7 @@
                 text="No events found"
                 translation="[540, 360]"
                 font="font:MediumSystemFont"
-                color="#8E8E93"
+                color="#8B95A5"
                 visible="false"
             />
 
@@ -132,7 +132,7 @@
                 id="settingsPanel"
                 width="1280"
                 height="720"
-                color="#0D0D0D"
+                color="#0D1117"
                 visible="false"
             >
                 <Label
@@ -147,7 +147,7 @@
                     text="Select the services you subscribe to"
                     translation="[60, 75]"
                     font="font:SmallSystemFont"
-                    color="#8E8E93"
+                    color="#8B95A5"
                 />
                 <CheckList
                     id="serviceCheckList"
@@ -158,7 +158,7 @@
                     color="#CCCCCC"
                     checkedIconUri=""
                     uncheckedIconUri=""
-                    focusBitmapBlendColor="#333333"
+                    focusBitmapBlendColor="#1A1F2E"
                     drawFocusFeedback="true"
                 />
             </Rectangle>

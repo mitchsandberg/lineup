@@ -12,7 +12,7 @@
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
 
     <children>
-        <Rectangle id="cardBg" width="300" height="200" color="#1C1C1E">
+        <Rectangle id="cardBg" width="300" height="200" color="#1A1F2E">
             <!-- Status badge -->
             <Rectangle id="statusBadge" translation="[12, 12]" height="26" color="#30D158" cornerRadius="4">
                 <Label
@@ -31,7 +31,7 @@
                 width="88"
                 horizAlign="right"
                 font="font:SmallestSystemFont"
-                color="#8E8E93"
+                color="#8B95A5"
             />
 
             <!-- Teams / Title -->
@@ -75,7 +75,7 @@
                 id="sportLabel"
                 translation="[12, 110]"
                 font="font:SmallestSystemFont"
-                color="#8E8E93"
+                color="#8B95A5"
             />
 
             <!-- Service badges row -->

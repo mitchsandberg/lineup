@@ -237,7 +237,7 @@ function ServiceChip({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#0D1117',
   },
   welcomeContent: {
     flex: 1,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   featureDesc: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 17,
     lineHeight: 24,
   },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   stepSubtitle: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 36,
@@ -329,9 +329,9 @@ const styles = StyleSheet.create({
     width: 220,
     height: 80,
     borderRadius: 16,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#1A1F2E',
     borderWidth: 3,
-    borderColor: '#3A3A3C',
+    borderColor: '#2D3548',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -362,12 +362,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   sectionHint: {
-    color: '#636366',
+    color: '#4A5568',
     fontSize: 15,
     marginBottom: 16,
   },
   selectedCount: {
-    color: '#8E8E93',
+    color: '#8B95A5',
     fontSize: 16,
     marginBottom: 24,
   },
@@ -384,8 +384,8 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   ctaButtonDisabled: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#3A3A3C',
+    backgroundColor: '#1A1F2E',
+    borderColor: '#2D3548',
   },
   ctaText: {
     color: '#FFFFFF',
