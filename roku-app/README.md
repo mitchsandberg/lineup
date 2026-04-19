@@ -34,7 +34,7 @@ roku-app/
   manifest                     -- App metadata, icons, splash screen
   source/
     main.brs                   -- Entry point, screen setup
-    utils.brs                  -- Utility functions (time formatting, ECP, registry)
+    utils.brs                  -- Utility functions (time formatting, registry)
     config.brs                 -- Streaming service definitions, sport filters, prefs
   components/
     screens/
@@ -59,7 +59,7 @@ roku-app/
 - Groups events by sport (All Sports view) or by time (single sport view)
 - Shows live scores, game times, broadcast channels
 - Displays which streaming services carry each game
-- Press OK on any event to launch the streaming app directly on Roku
+- Press OK on any event to see which streaming services carry it
 - Settings screen to select which services you subscribe to
 - Preferences saved to device registry
 - D-pad remote navigation with visible focus states
@@ -94,7 +94,7 @@ The channel works for sideloading and development. To publish to the Roku Channe
    - Place all images in the `images/` directory and reference in `manifest`
 
 2. **Manifest Changes**
-   - Set `bs_const=debug=false` (currently `true`)
+   - Set `bs_const=debug=false` (already set)
    - Add a real `mm_icon_focus_hd` and `mm_icon_focus_fhd` pointing to actual image files
    - Add `splash_screen_hd` and `splash_screen_fhd`
 
