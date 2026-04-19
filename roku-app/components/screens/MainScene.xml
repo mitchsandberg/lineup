@@ -51,10 +51,8 @@
                 <ButtonGroup
                     id="tabButtons"
                     buttons="[&quot;Guide&quot;, &quot;Settings&quot;]"
-                    focusedColor="#FFFFFF"
-                    color="#8B95A5"
-                    focusedFont="font:SmallBoldSystemFont"
-                    font="font:SmallSystemFont"
+                    textColor="#8B95A5"
+                    focusedTextColor="#FFFFFF"
                 />
             </LayoutGroup>
 
@@ -70,8 +68,6 @@
                     vertFocusAnimationStyle="floatingFocus"
                     numRows="1"
                     itemSize="[120, 40]"
-                    focusedColor="#FFFFFF"
-                    color="#8E8E93"
                     drawFocusFeedback="true"
                     focusBitmapBlendColor="#1A1F2E"
                 />
@@ -154,8 +150,6 @@
                     translation="[60, 120]"
                     itemSize="[400, 50]"
                     numRows="6"
-                    focusedColor="#FFFFFF"
-                    color="#CCCCCC"
                     checkedIconUri=""
                     uncheckedIconUri=""
                     focusBitmapBlendColor="#1A1F2E"
