@@ -6,7 +6,7 @@ sub Main(args as Dynamic)
     scene = screen.CreateScene("MainScene")
     screen.Show()
 
-    if args.contentId <> invalid and args.mediaType <> invalid
+    if args <> invalid and args.DoesExist("contentId") and args.DoesExist("mediaType")
         scene.callFunc("handleDeepLink", {
             contentId: args.contentId,
             mediaType: args.mediaType

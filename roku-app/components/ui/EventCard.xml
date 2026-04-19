@@ -14,7 +14,7 @@
     <children>
         <Rectangle id="cardBg" width="300" height="200" color="#1A1F2E">
             <!-- Status badge -->
-            <Rectangle id="statusBadge" translation="[12, 12]" height="26" color="#30D158" cornerRadius="4">
+            <Rectangle id="statusBadge" translation="[12, 12]" height="26" color="#30D158">
                 <Label
                     id="statusLabel"
                     translation="[8, 3]"

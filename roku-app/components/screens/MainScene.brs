@@ -101,25 +101,29 @@ sub filterAndDisplayEvents()
 
     filtered = []
     for each evt in m.allEvents
-        if evt.status = "final" then continue for
+        shouldInclude = true
 
-        if m.currentSport <> "all" and evt.sport <> m.currentSport
-            continue for
+        if evt.status = "final" then shouldInclude = false
+
+        if shouldInclude and m.currentSport <> "all" and evt.sport <> m.currentSport
+            shouldInclude = false
         end if
 
-        hasService = false
-        services = evt.availableServices
-        if services <> invalid
-            for each svcId in services
-                if selectedSvcSet.DoesExist(svcId)
-                    hasService = true
-                    exit for
-                end if
-            end for
-        end if
-        if services = invalid or services.Count() = 0 then hasService = true
+        if shouldInclude
+            hasService = false
+            services = evt.availableServices
+            if services <> invalid
+                for each svcId in services
+                    if selectedSvcSet.DoesExist(svcId)
+                        hasService = true
+                        exit for
+                    end if
+                end for
+            end if
+            if services = invalid or services.Count() = 0 then hasService = true
 
-        if hasService then filtered.Push(evt)
+            if hasService then filtered.Push(evt)
+        end if
     end for
 
     if m.currentSport = "all"

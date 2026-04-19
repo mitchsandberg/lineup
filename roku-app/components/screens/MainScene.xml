@@ -89,6 +89,7 @@
                 focusBitmapBlendColor="#252D3D"
                 drawFocusFeedback="true"
                 vertFocusAnimationStyle="floatingFocus"
+                rowItemComponent="EventCard"
             />
 
             <!-- Loading indicator -->

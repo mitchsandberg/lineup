@@ -8,7 +8,7 @@
     <script type="text/brightscript" uri="ServiceBadge.brs" />
 
     <children>
-        <Rectangle id="badgeBg" width="72" height="22" color="#333333" cornerRadius="3">
+        <Rectangle id="badgeBg" width="72" height="22" color="#333333">
             <Label
                 id="badgeLabel"
                 translation="[4, 2]"

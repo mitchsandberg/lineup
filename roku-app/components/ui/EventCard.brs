@@ -69,7 +69,6 @@ sub onContentChanged()
                 badge.width = 70
                 badge.height = 20
                 badge.color = svc.color
-                badge.cornerRadius = 3
 
                 lbl = badge.CreateChild("Label")
                 lbl.text = svc.name
