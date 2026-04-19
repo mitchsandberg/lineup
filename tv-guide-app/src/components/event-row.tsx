@@ -38,6 +38,7 @@ export function EventRow({ label, events, userServices }: EventRowProps) {
         )}
         contentContainerStyle={styles.listContent}
         showsHorizontalScrollIndicator={false}
+        style={styles.list}
       />
     </View>
   );
@@ -46,6 +47,10 @@ export function EventRow({ label, events, userServices }: EventRowProps) {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 32,
+    overflow: 'visible',
+  },
+  list: {
+    overflow: 'visible',
   },
   labelRow: {
     flexDirection: 'row',

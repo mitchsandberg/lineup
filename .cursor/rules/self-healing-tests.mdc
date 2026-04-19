@@ -1,0 +1,38 @@
+---
+description: Self-healing test policy — fix broken tests without masking real bugs
+globs: tv-guide-app/**/__tests__/**/*.test.ts
+alwaysApply: false
+---
+
+# Self-Healing Tests
+
+When tests fail after a code change, fix them — but never mask real bugs.
+
+## Triage failed tests
+
+For each failure, classify it:
+
+1. **Test is stale** — the test asserts old behavior that was intentionally changed.
+   - Update the assertion to match the new correct behavior.
+   - Example: a count changed from 6 to 10 services → update `toHaveLength(10)`.
+
+2. **Test caught a real bug** — the code change introduced a regression.
+   - Fix the source code, not the test.
+   - Add an additional regression test if the failure was subtle.
+
+3. **Test is flaky** — the failure is non-deterministic (timing, network, random data).
+   - Make the test deterministic (mock time, use fixed data, add retries for async).
+   - Never delete a flaky test without replacing it.
+
+## Guardrails against false positives/negatives
+
+- **Never weaken an assertion** to make it pass (e.g. `.toBeGreaterThan(0)` replacing `.toHaveLength(5)`).
+- **Never delete a failing test** without understanding why it fails.
+- **Never change test expectations and source code in the same step** without explaining which one was wrong.
+- **Always re-run the full suite** after fixing any test to confirm no cascade.
+- If a hardcoded count changes (e.g. number of channels/services), verify the new count is correct by checking the actual data, not by just copying the error message value.
+
+## After healing
+
+- Run `npx jest --no-coverage` from both `tv-guide-app/` and `tv-guide-app/server/`.
+- Confirm 0 failures before considering the task done.

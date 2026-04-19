@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -130,6 +131,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+    ...(Platform.OS === 'web' ? { height: '100vh' as unknown as number } : {}),
   },
   header: {
     paddingHorizontal: TV_SIZES.rowPadding,
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollPadding: {
-    height: 60,
+    height: 120,
   },
   centerContainer: {
     flex: 1,

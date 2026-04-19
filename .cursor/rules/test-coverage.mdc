@@ -1,0 +1,38 @@
+---
+description: Ensure test coverage for all source code changes
+globs: tv-guide-app/src/**/*.ts,tv-guide-app/src/**/*.tsx,tv-guide-app/server/**/*.ts
+alwaysApply: false
+---
+
+# Test Coverage Policy
+
+When modifying or creating source files, always verify corresponding tests exist.
+
+## After every code change
+
+1. Identify which modules/functions were added or modified.
+2. Check if a test file already covers those modules:
+   - Frontend: `src/__tests__/<module>.test.ts`
+   - Server: `server/__tests__/<module>.test.ts`
+3. If tests are missing or don't cover the new behavior, write them before finishing.
+
+## What to test
+
+- New exported functions or components: unit tests for expected inputs/outputs.
+- New data entries (services, channels): integrity tests (valid IDs, no duplicates, valid references).
+- Bug fixes: a regression test that would have caught the original bug.
+- Modified behavior: update existing tests to match, and add edge cases.
+
+## Test conventions for this project
+
+- Frontend tests: `tv-guide-app/src/__tests__/` using Jest + `@/` path aliases.
+- Server tests: `tv-guide-app/server/__tests__/` using Jest + ts-jest.
+- Use `describe`/`it` blocks with descriptive names.
+- Use factory helpers (e.g. `makeEvent()`) for test data.
+- Run `npx jest --no-coverage` from `tv-guide-app/` (frontend) and `tv-guide-app/server/` (server) to verify.
+
+## Do NOT
+
+- Skip writing tests because "it's a small change."
+- Write tests that pass regardless of behavior (tautological assertions).
+- Add `any` type casts in test files to silence type errors.

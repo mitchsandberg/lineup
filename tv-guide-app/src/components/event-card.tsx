@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -19,6 +20,7 @@ interface EventCardProps {
 
 export function EventCard({ event, userServices, onPress }: EventCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const pressableRef = useRef<View>(null);
   const [isFocused, setIsFocused] = useState(false);
 
   const matchingServices = event.availableServices.filter((s) =>
@@ -56,6 +58,10 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
       tension: 100,
     }).start();
 
+    if (Platform.OS === 'web' && pressableRef.current) {
+      (pressableRef.current as unknown as HTMLElement).blur?.();
+    }
+
     if (onPress) {
       onPress();
       return;
@@ -75,6 +81,7 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
   return (
     <Animated.View style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
       <Pressable
+        ref={pressableRef}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onPress={handlePress}
@@ -145,11 +152,10 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
 const styles = StyleSheet.create({
   wrapper: {
     width: TV_SIZES.cardWidth,
-    height: TV_SIZES.cardHeight,
     marginRight: TV_SIZES.cardGap,
   },
   card: {
-    flex: 1,
+    height: TV_SIZES.cardHeight,
     backgroundColor: '#1C1C1E',
     borderRadius: 16,
     padding: 20,

@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -114,9 +115,12 @@ function ServicePickerStep({
 }) {
   const btnScale = useRef(new Animated.Value(1)).current;
 
+  const scrollStyle = Platform.OS === 'web'
+    ? [styles.screen, { height: '100vh' as unknown as number }]
+    : styles.screen;
+
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.pickerContent} showsVerticalScrollIndicator={false}>
+    <ScrollView style={scrollStyle} contentContainerStyle={styles.pickerContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.stepTitle}>Pick your streaming services</Text>
         <Text style={styles.stepSubtitle}>
           Lineup will only show games available on your services. You can change this anytime in Settings.
@@ -182,8 +186,7 @@ function ServicePickerStep({
             </Text>
           </Pressable>
         </Animated.View>
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
