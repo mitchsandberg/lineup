@@ -130,5 +130,6 @@
         </Rectangle>
 
         <EventFetchTask id="fetchTask" />
+        <LaunchTask id="launchTask" />
     </children>
 </component>

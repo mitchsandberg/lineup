@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="LaunchTask" extends="Task">
+    <interface>
+        <field id="launchUrl" type="string" value="" />
+    </interface>
+
+    <script type="text/brightscript">
+    <![CDATA[
+        sub Init()
+            m.top.functionName = "doLaunch"
+        end sub
+
+        sub doLaunch()
+            url = m.top.launchUrl
+            if url = "" or url = invalid then return
+
+            transfer = CreateObject("roUrlTransfer")
+            transfer.SetUrl(url)
+            port = CreateObject("roMessagePort")
+            transfer.SetMessagePort(port)
+            transfer.AsyncPostFromString("")
+            Wait(3000, port)
+        end sub
+    ]]>
+    </script>
+</component>

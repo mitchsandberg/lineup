@@ -80,11 +80,11 @@ sub LaunchChannel(channelId as String, params as String)
         url = url + "?" + params
     end if
 
-    m.launchTransfer = CreateObject("roUrlTransfer")
-    m.launchTransfer.SetUrl(url)
-    m.launchPort = CreateObject("roMessagePort")
-    m.launchTransfer.SetMessagePort(m.launchPort)
-    m.launchTransfer.AsyncPostFromString("")
+    task = m.top.FindNode("launchTask")
+    if task <> invalid
+        task.launchUrl = url
+        task.control = "run"
+    end if
 end sub
 
 function ReadRegistrySetting(section as String, key as String) as Dynamic
