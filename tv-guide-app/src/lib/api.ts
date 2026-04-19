@@ -2,8 +2,11 @@ import { Platform } from 'react-native';
 import { SportEvent, GroupedEvents, TimeGroup, SportCategory } from './types';
 import { findChannelByName } from '@/data/channels';
 
-const API_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-const API_BASE = `http://${API_HOST}:3001`;
+const PRODUCTION_API = 'https://lineup-api.onrender.com';
+const LOCAL_API_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+const LOCAL_API = `http://${LOCAL_API_HOST}:3001`;
+
+const API_BASE = __DEV__ ? LOCAL_API : PRODUCTION_API;
 
 interface APIEvent {
   id: string;
