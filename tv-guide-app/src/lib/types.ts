@@ -59,4 +59,5 @@ export interface GroupedEvents {
 export interface UserPreferences {
   selectedServices: string[];
   selectedSport: SportCategory;
+  onboardingComplete: boolean;
 }

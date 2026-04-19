@@ -161,19 +161,32 @@ function normalizeESPNEvent(event: ESPNEvent, config: { league: string; sport: s
   };
 }
 
+function getDateStrings(): string[] {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0].replace(/-/g, '');
+  const tomorrow = new Date(now.getTime() + 86_400_000)
+    .toISOString()
+    .split('T')[0]
+    .replace(/-/g, '');
+  return [today, tomorrow];
+}
+
 export async function fetchESPNEvents(): Promise<NormalizedEvent[]> {
   const results: NormalizedEvent[] = [];
+  const dates = getDateStrings();
 
-  const fetches = Object.entries(ESPN_SPORTS).map(async ([_key, config]) => {
-    const url = `${ESPN_BASE}/${config.slug}/scoreboard`;
-    const data = await fetchJSON<{ events: ESPNEvent[] }>(url);
-    if (!data?.events) return;
+  const fetches = Object.entries(ESPN_SPORTS).flatMap(([_key, config]) =>
+    dates.map(async (date) => {
+      const url = `${ESPN_BASE}/${config.slug}/scoreboard?dates=${date}`;
+      const data = await fetchJSON<{ events: ESPNEvent[] }>(url);
+      if (!data?.events) return;
 
-    for (const event of data.events) {
-      const normalized = normalizeESPNEvent(event, config);
-      if (normalized) results.push(normalized);
-    }
-  });
+      for (const event of data.events) {
+        const normalized = normalizeESPNEvent(event, config);
+        if (normalized) results.push(normalized);
+      }
+    }),
+  );
 
   await Promise.all(fetches);
   return results;

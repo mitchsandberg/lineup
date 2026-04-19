@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -19,13 +19,16 @@ interface EventCardProps {
 
 export function EventCard({ event, userServices, onPress }: EventCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [isFocused, setIsFocused] = useState(false);
 
   const matchingServices = event.availableServices.filter((s) =>
     userServices.includes(s),
   );
   const primaryService = matchingServices[0];
+  const primaryServiceInfo = primaryService ? SERVICE_MAP[primaryService] : null;
 
   const handleFocus = useCallback(() => {
+    setIsFocused(true);
     Animated.spring(scaleAnim, {
       toValue: TV_SIZES.focusScale,
       useNativeDriver: true,
@@ -35,6 +38,7 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
   }, [scaleAnim]);
 
   const handleBlur = useCallback(() => {
+    setIsFocused(false);
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
@@ -118,6 +122,14 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
           </View>
         </View>
       </Pressable>
+      {isFocused && primaryServiceInfo && (
+        <View style={styles.watchHint}>
+          <View style={[styles.watchHintDot, { backgroundColor: primaryServiceInfo.color }]} />
+          <Text style={styles.watchHintText} numberOfLines={1}>
+            Press OK to watch on {primaryServiceInfo.name}
+          </Text>
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -211,5 +223,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
+  },
+  watchHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 8,
+  },
+  watchHintDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  watchHintText: {
+    color: '#8E8E93',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

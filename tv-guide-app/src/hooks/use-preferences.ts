@@ -5,8 +5,9 @@ import { SportCategory, UserPreferences } from '@/lib/types';
 const STORAGE_KEY = 'tv-guide-preferences';
 
 const defaultPreferences: UserPreferences = {
-  selectedServices: ['youtube-tv', 'espn-plus', 'peacock', 'hulu-live', 'prime-video', 'apple-tv'],
+  selectedServices: ['youtube-tv', 'espn-plus', 'peacock', 'hulu-live', 'prime-video', 'apple-tv', 'mlb-tv'],
   selectedSport: 'all',
+  onboardingComplete: false,
 };
 
 let AsyncStorage: any = null;
@@ -89,5 +90,13 @@ export function usePreferences() {
     });
   }, []);
 
-  return { prefs, loaded, updateServices, toggleService, setSport };
+  const completeOnboarding = useCallback(() => {
+    setPrefs((prev) => {
+      const next = { ...prev, onboardingComplete: true };
+      savePreferences(next);
+      return next;
+    });
+  }, []);
+
+  return { prefs, loaded, updateServices, toggleService, setSport, completeOnboarding };
 }

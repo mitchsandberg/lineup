@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { EventRow } from '@/components/event-row';
+import { Onboarding } from '@/components/onboarding';
 import { SportFilter } from '@/components/sport-filter';
 import { fetchEvents, groupEventsByTime, groupEventsBySport } from '@/lib/api';
 import { TV_SIZES } from '@/lib/constants';
@@ -17,7 +18,7 @@ export default function GuideScreen() {
   const [events, setEvents] = useState<SportEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { prefs, setSport, loaded } = usePreferences();
+  const { prefs, setSport, toggleService, completeOnboarding, loaded } = usePreferences();
 
   const loadEvents = useCallback(async () => {
     try {
@@ -60,6 +61,16 @@ export default function GuideScreen() {
     );
   }
 
+  if (!prefs.onboardingComplete) {
+    return (
+      <Onboarding
+        selectedServices={prefs.selectedServices}
+        onToggleService={toggleService}
+        onComplete={completeOnboarding}
+      />
+    );
+  }
+
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -85,12 +96,14 @@ export default function GuideScreen() {
 
       {grouped.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📺</Text>
+          <View style={styles.emptyIconContainer}>
+            <Text style={styles.emptyIconText}>—</Text>
+          </View>
           <Text style={styles.emptyText}>No games right now</Text>
           <Text style={styles.emptySubtext}>
             {prefs.selectedSport !== 'all'
               ? 'Try selecting a different sport or check back later'
-              : 'Check back later for upcoming games'}
+              : 'When games are on, just press select to start watching — Lineup opens the right app for you'}
           </Text>
         </View>
       ) : (
@@ -164,9 +177,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  emptyIcon: {
-    fontSize: 64,
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#333333',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  emptyIconText: {
+    color: '#555555',
+    fontSize: 36,
+    fontWeight: '300',
   },
   emptyText: {
     color: '#FFFFFF',
