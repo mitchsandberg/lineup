@@ -671,66 +671,65 @@ end sub
 
 sub showServicePicker(services as Object)
     m.pickerServices = services
-    m.pickerFocusIdx = 0
     m.pickerItemsGroup.RemoveChildrenIndex(m.pickerItemsGroup.GetChildCount(), 0)
 
     yPos = 0
-    for i = 0 to services.Count() - 1
-        svc = services[i]
+    for each svc in services
         row = CreateObject("roSGNode", "Rectangle")
         row.width = 380
-        row.height = 42
-        row.color = "#252D3D"
+        row.height = 38
+        row.color = "#1A1F2E"
         row.translation = [0, yPos]
 
         dot = CreateObject("roSGNode", "Rectangle")
-        dot.width = 12
-        dot.height = 12
+        dot.width = 10
+        dot.height = 10
         dot.color = svc.color
-        dot.translation = [14, 15]
+        dot.translation = [14, 14]
         row.AppendChild(dot)
 
         lbl = CreateObject("roSGNode", "Label")
         lbl.text = svc.name
-        lbl.font = "font:SmallBoldSystemFont"
-        lbl.color = "#FFFFFF"
-        lbl.translation = [36, 9]
+        lbl.font = "font:SmallSystemFont"
+        lbl.color = "#C7C7CC"
+        lbl.translation = [34, 8]
         lbl.width = 330
         row.AppendChild(lbl)
 
         m.pickerItemsGroup.AppendChild(row)
-        yPos = yPos + 48
+        yPos = yPos + 42
     end for
 
-    boxH = 110 + services.Count() * 48
-    if boxH > 500 then boxH = 500
+    btnY = yPos + 14
+    btn = CreateObject("roSGNode", "Rectangle")
+    btn.width = 380
+    btn.height = 44
+    btn.color = "#2C7BE5"
+    btn.translation = [0, btnY]
+
+    btnLbl = CreateObject("roSGNode", "Label")
+    btnLbl.text = "Press Home to switch apps"
+    btnLbl.font = "font:SmallBoldSystemFont"
+    btnLbl.color = "#FFFFFF"
+    btnLbl.width = 380
+    btnLbl.horizAlign = "center"
+    btnLbl.translation = [0, 10]
+    btn.AppendChild(btnLbl)
+    m.pickerItemsGroup.AppendChild(btn)
+
+    boxH = 110 + services.Count() * 42 + 72
+    if boxH > 520 then boxH = 520
     m.pickerBox.height = boxH
     m.pickerBox.translation = [410, (720 - boxH) / 2]
 
     m.focusMode = "picker"
     m.pickerOverlay.visible = true
-    updatePickerFocus()
-end sub
-
-sub updatePickerFocus()
-    for i = 0 to m.pickerItemsGroup.GetChildCount() - 1
-        row = m.pickerItemsGroup.GetChild(i)
-        if i = m.pickerFocusIdx
-            row.color = "#3A4560"
-        else
-            row.color = "#252D3D"
-        end if
-    end for
 end sub
 
 sub hideServicePicker()
     m.pickerOverlay.visible = false
     m.focusMode = "cards"
     updateCardFocus()
-end sub
-
-sub launchPickerSelection()
-    hideServicePicker()
 end sub
 
 ' ─── SETTINGS ───
@@ -1005,26 +1004,8 @@ function handleSettingsKeys(key as String) as Boolean
 end function
 
 function handlePickerKeys(key as String) as Boolean
-    if key = "back"
+    if key = "back" or key = "OK"
         hideServicePicker()
-        return true
-    end if
-    if key = "up"
-        if m.pickerFocusIdx > 0
-            m.pickerFocusIdx = m.pickerFocusIdx - 1
-            updatePickerFocus()
-        end if
-        return true
-    end if
-    if key = "down"
-        if m.pickerFocusIdx < m.pickerServices.Count() - 1
-            m.pickerFocusIdx = m.pickerFocusIdx + 1
-            updatePickerFocus()
-        end if
-        return true
-    end if
-    if key = "OK"
-        launchPickerSelection()
         return true
     end if
     return true
