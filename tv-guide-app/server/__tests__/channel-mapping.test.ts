@@ -114,6 +114,33 @@ describe('getServicesForChannel', () => {
     });
   });
 
+  describe('league service channels', () => {
+    it('maps MLB.TV to mlb-tv', () => {
+      const services = getServicesForChannel('MLB.TV');
+      expect(services).toContain('mlb-tv');
+    });
+
+    it('maps MLBTV (no dot) to mlb-tv', () => {
+      const services = getServicesForChannel('MLBTV');
+      expect(services).toContain('mlb-tv');
+    });
+
+    it('maps NBA League Pass to nba-league-pass', () => {
+      const services = getServicesForChannel('NBA League Pass');
+      expect(services).toContain('nba-league-pass');
+    });
+
+    it('maps NFL+ to nfl-plus', () => {
+      const services = getServicesForChannel('NFL+');
+      expect(services).toContain('nfl-plus');
+    });
+
+    it('maps NFL Sunday Ticket to nfl-sunday-ticket', () => {
+      const services = getServicesForChannel('NFL Sunday Ticket');
+      expect(services).toContain('nfl-sunday-ticket');
+    });
+  });
+
   describe('edge cases', () => {
     it('returns empty array for empty string', () => {
       expect(getServicesForChannel('')).toEqual([]);

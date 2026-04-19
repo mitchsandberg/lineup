@@ -48,6 +48,14 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
   }, [scaleAnim]);
 
   const handlePress = useCallback(() => {
+    setIsFocused(false);
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+
     if (onPress) {
       onPress();
       return;
@@ -55,7 +63,7 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
     if (primaryService) {
       launchStreamingApp(primaryService);
     }
-  }, [onPress, primaryService]);
+  }, [onPress, primaryService, scaleAnim]);
 
   const isLive = event.status === 'live';
   const startTime = new Date(event.startTime);

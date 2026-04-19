@@ -68,6 +68,10 @@ describe('Service data integrity', () => {
     expect(ids).toContain('hulu-live');
     expect(ids).toContain('prime-video');
     expect(ids).toContain('apple-tv');
+    expect(ids).toContain('mlb-tv');
+    expect(ids).toContain('nba-league-pass');
+    expect(ids).toContain('nfl-plus');
+    expect(ids).toContain('nfl-sunday-ticket');
   });
 });
 
@@ -120,6 +124,70 @@ describe('CHANNEL_MAP', () => {
       expect(channel.name).toBeDefined();
       expect(channel.serviceIds.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('league channel mappings', () => {
+  it('MLB.TV channel maps to mlb-tv service', () => {
+    const channel = CHANNELS.find((c) => c.id === 'mlb-tv');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toEqual(['mlb-tv']);
+  });
+
+  it('MLBTV (alt) channel maps to mlb-tv service', () => {
+    const channel = CHANNELS.find((c) => c.id === 'mlb-tv-alt');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toEqual(['mlb-tv']);
+  });
+
+  it('NBA League Pass channel maps to nba-league-pass service', () => {
+    const channel = CHANNELS.find((c) => c.id === 'nba-league-pass');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toEqual(['nba-league-pass']);
+  });
+
+  it('NBA TV also maps to nba-league-pass', () => {
+    const channel = CHANNELS.find((c) => c.id === 'nba-tv');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toContain('nba-league-pass');
+    expect(channel!.serviceIds).toContain('youtube-tv');
+  });
+
+  it('NFL+ channel maps to nfl-plus service', () => {
+    const channel = CHANNELS.find((c) => c.id === 'nfl-plus');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toEqual(['nfl-plus']);
+  });
+
+  it('NFL Network also maps to nfl-plus', () => {
+    const channel = CHANNELS.find((c) => c.id === 'nfl-network');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toContain('nfl-plus');
+    expect(channel!.serviceIds).toContain('youtube-tv');
+  });
+
+  it('NFL Sunday Ticket maps to nfl-sunday-ticket service', () => {
+    const channel = CHANNELS.find((c) => c.id === 'nfl-sunday-ticket');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toEqual(['nfl-sunday-ticket']);
+  });
+
+  it('findChannelByName finds MLB.TV', () => {
+    const channel = findChannelByName('MLB.TV');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toContain('mlb-tv');
+  });
+
+  it('findChannelByName finds NBA League Pass', () => {
+    const channel = findChannelByName('NBA League Pass');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toContain('nba-league-pass');
+  });
+
+  it('findChannelByName finds NFL Sunday Ticket', () => {
+    const channel = findChannelByName('NFL Sunday Ticket');
+    expect(channel).toBeDefined();
+    expect(channel!.serviceIds).toContain('nfl-sunday-ticket');
   });
 });
 

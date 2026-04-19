@@ -15,9 +15,9 @@ export const CHANNELS: Channel[] = [
   { id: 'tnt', name: 'TNT', serviceIds: ['youtube-tv', 'hulu-live'] },
   { id: 'tbs', name: 'TBS', serviceIds: ['youtube-tv', 'hulu-live'] },
   { id: 'trutv', name: 'truTV', serviceIds: ['youtube-tv', 'hulu-live'] },
-  { id: 'nfl-network', name: 'NFL Network', serviceIds: ['youtube-tv', 'hulu-live'] },
+  { id: 'nfl-network', name: 'NFL Network', serviceIds: ['youtube-tv', 'hulu-live', 'nfl-plus'] },
   { id: 'mlb-network', name: 'MLB Network', serviceIds: ['youtube-tv', 'hulu-live'] },
-  { id: 'nba-tv', name: 'NBA TV', serviceIds: ['youtube-tv', 'hulu-live'] },
+  { id: 'nba-tv', name: 'NBA TV', serviceIds: ['youtube-tv', 'hulu-live', 'nba-league-pass'] },
   { id: 'nhl-network', name: 'NHL Network', serviceIds: ['youtube-tv', 'hulu-live'] },
   { id: 'golf-channel', name: 'Golf Channel', serviceIds: ['youtube-tv', 'hulu-live', 'peacock'] },
   { id: 'usa', name: 'USA Network', serviceIds: ['youtube-tv', 'hulu-live', 'peacock'] },
@@ -31,9 +31,9 @@ export const CHANNELS: Channel[] = [
   { id: 'mlb-tv', name: 'MLB.TV', serviceIds: ['mlb-tv'] },
   { id: 'mlb-tv-alt', name: 'MLBTV', serviceIds: ['mlb-tv'] },
   { id: 'nba-league-pass', name: 'NBA League Pass', serviceIds: ['nba-league-pass'] },
-  { id: 'nba-tv-lp', name: 'NBA TV', serviceIds: ['youtube-tv', 'hulu-live', 'nba-league-pass'] },
+
   { id: 'nfl-plus', name: 'NFL+', serviceIds: ['nfl-plus'] },
-  { id: 'nfl-network-plus', name: 'NFL Network', serviceIds: ['youtube-tv', 'hulu-live', 'nfl-plus'] },
+
   { id: 'nfl-sunday-ticket', name: 'NFL Sunday Ticket', serviceIds: ['nfl-sunday-ticket'] },
 ];
 
