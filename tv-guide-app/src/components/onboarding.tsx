@@ -8,8 +8,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { MAJOR_SERVICES, LEAGUE_SERVICES } from '@/data/services';
-import { TV_SIZES } from '@/lib/constants';
+import { getSizesForWidth } from '@/lib/constants';
 
 interface OnboardingProps {
   selectedServices: string[];
@@ -35,12 +36,14 @@ export function Onboarding({ selectedServices, onToggleService, onComplete }: On
 
 function WelcomeStep({ onNext }: { onNext: () => void }) {
   const btnScale = useRef(new Animated.Value(1)).current;
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
 
   return (
     <View style={styles.screen}>
-      <View style={styles.welcomeContent}>
-        <Text style={styles.logoText}>Lineup</Text>
-        <Text style={styles.tagline}>Live Sports TV Guide</Text>
+      <View style={[styles.welcomeContent, isMobile && { paddingHorizontal: 24 }]}>
+        <Text style={[styles.logoText, isMobile && { fontSize: 44 }]}>Lineup</Text>
+        <Text style={[styles.tagline, isMobile && { fontSize: 18, marginBottom: 32 }]}>Live Sports TV Guide</Text>
 
         <View style={styles.featureList}>
           <FeatureRow
@@ -115,18 +118,20 @@ function ServicePickerStep({
 }) {
   const btnScale = useRef(new Animated.Value(1)).current;
 
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
   const scrollStyle = Platform.OS === 'web'
     ? [styles.screen, { height: '100vh' as unknown as number }]
     : styles.screen;
 
   return (
-    <ScrollView style={scrollStyle} contentContainerStyle={styles.pickerContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.stepTitle}>Pick your streaming services</Text>
+    <ScrollView style={scrollStyle} contentContainerStyle={[styles.pickerContent, isMobile && { paddingHorizontal: 20, paddingTop: 60 }]} showsVerticalScrollIndicator={false}>
+        <Text style={[styles.stepTitle, isMobile && { fontSize: 26 }]}>Pick your streaming services</Text>
         <Text style={styles.stepSubtitle}>
           Lineup will only show games available on your services. You can change this anytime in Settings.
         </Text>
 
-        <View style={styles.serviceGrid}>
+        <View style={[styles.serviceGrid, isMobile && { gap: 10 }]}>
           {MAJOR_SERVICES.map((service) => (
             <ServiceChip
               key={service.id}
@@ -134,6 +139,7 @@ function ServicePickerStep({
               color={service.color}
               isSelected={selectedServices.includes(service.id)}
               onPress={() => onToggle(service.id)}
+              compact={isMobile}
             />
           ))}
         </View>
@@ -141,7 +147,7 @@ function ServicePickerStep({
         <Text style={styles.sectionLabel}>League packages</Text>
         <Text style={styles.sectionHint}>Add these if you subscribe to league-specific streaming</Text>
 
-        <View style={styles.serviceGrid}>
+        <View style={[styles.serviceGrid, isMobile && { gap: 10 }]}>
           {LEAGUE_SERVICES.map((service) => (
             <ServiceChip
               key={service.id}
@@ -149,6 +155,7 @@ function ServicePickerStep({
               color={service.color}
               isSelected={selectedServices.includes(service.id)}
               onPress={() => onToggle(service.id)}
+              compact={isMobile}
             />
           ))}
         </View>
@@ -195,13 +202,17 @@ function ServiceChip({
   color,
   isSelected,
   onPress,
+  compact,
 }: {
   name: string;
   color: string;
   isSelected: boolean;
   onPress: () => void;
+  compact?: boolean;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const { width } = useWindowDimensions();
+  const sizes = getSizesForWidth(width);
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -209,7 +220,7 @@ function ServiceChip({
         onPress={onPress}
         onFocus={() =>
           Animated.spring(scaleAnim, {
-            toValue: TV_SIZES.focusScale,
+            toValue: sizes.focusScale,
             useNativeDriver: true,
             friction: 8,
           }).start()
@@ -223,12 +234,13 @@ function ServiceChip({
         }
         style={({ focused }) => [
           styles.chip,
+          compact && { width: 150, height: 56, paddingHorizontal: 12, gap: 8 },
           isSelected && { backgroundColor: color, borderColor: color },
           focused && styles.chipFocused,
         ]}
       >
-        <Text style={styles.chipCheck}>{isSelected ? '✓' : ''}</Text>
-        <Text style={styles.chipName}>{name}</Text>
+        <Text style={[styles.chipCheck, compact && { fontSize: 16, width: 20 }]}>{isSelected ? '✓' : ''}</Text>
+        <Text style={[styles.chipName, compact && { fontSize: 15 }]}>{name}</Text>
       </Pressable>
     </Animated.View>
   );

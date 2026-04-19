@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Platform,
@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { STATUS_COLORS, TV_SIZES } from '@/lib/constants';
+import { STATUS_COLORS, type ResponsiveSizes } from '@/lib/constants';
 import { SportEvent } from '@/lib/types';
 import { SERVICE_MAP } from '@/data/services';
 import { launchStreamingApp } from '@/lib/deep-links';
@@ -15,10 +15,11 @@ import { launchStreamingApp } from '@/lib/deep-links';
 interface EventCardProps {
   event: SportEvent;
   userServices: string[];
+  sizes: ResponsiveSizes;
   onPress?: () => void;
 }
 
-export function EventCard({ event, userServices, onPress }: EventCardProps) {
+export function EventCard({ event, userServices, sizes, onPress }: EventCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const pressableRef = useRef<View>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -32,12 +33,12 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
   const handleFocus = useCallback(() => {
     setIsFocused(true);
     Animated.spring(scaleAnim, {
-      toValue: TV_SIZES.focusScale,
+      toValue: sizes.focusScale,
       useNativeDriver: true,
       friction: 8,
       tension: 100,
     }).start();
-  }, [scaleAnim]);
+  }, [scaleAnim, sizes.focusScale]);
 
   const handleBlur = useCallback(() => {
     setIsFocused(false);
@@ -78,8 +79,21 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
     minute: '2-digit',
   });
 
+  const dynamicStyles = useMemo(() => ({
+    wrapper: { width: sizes.cardWidth, marginRight: sizes.cardGap },
+    card: { height: sizes.cardHeight, borderWidth: sizes.focusBorderWidth, padding: sizes.cardWidth < 300 ? 14 : 20 },
+    cardFocused: { borderColor: sizes.focusBorderColor },
+    statusText: { fontSize: sizes.badgeSize },
+    channelText: { fontSize: sizes.badgeSize },
+    teamName: { fontSize: sizes.titleSize },
+    score: { fontSize: sizes.titleSize },
+    eventTitle: { fontSize: sizes.titleSize },
+    leagueText: { fontSize: sizes.subtitleSize },
+    serviceBadgeText: { fontSize: sizes.cardWidth < 300 ? 9 : 11 },
+  }), [sizes]);
+
   return (
-    <Animated.View style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View style={[dynamicStyles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
       <Pressable
         ref={pressableRef}
         onFocus={handleFocus}
@@ -87,48 +101,49 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
         onPress={handlePress}
         style={({ focused }) => [
           styles.card,
-          focused && styles.cardFocused,
+          dynamicStyles.card,
+          focused && [styles.cardFocused, dynamicStyles.cardFocused],
         ]}
       >
         <View style={styles.topRow}>
           <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[event.status] }]}>
-            <Text style={styles.statusText}>
+            <Text style={[styles.statusText, dynamicStyles.statusText]}>
               {isLive ? '● LIVE' : timeStr}
             </Text>
           </View>
-          <Text style={styles.channelText}>{event.channel}</Text>
+          <Text style={[styles.channelText, dynamicStyles.channelText]}>{event.channel}</Text>
         </View>
 
         <View style={styles.middleRow}>
           {event.homeTeam && event.awayTeam ? (
             <>
               <View style={styles.teamRow}>
-                <Text style={styles.teamName} numberOfLines={1}>{event.awayTeam}</Text>
+                <Text style={[styles.teamName, dynamicStyles.teamName]} numberOfLines={1}>{event.awayTeam}</Text>
                 {event.awayScore != null && (
-                  <Text style={styles.score}>{event.awayScore}</Text>
+                  <Text style={[styles.score, dynamicStyles.score]}>{event.awayScore}</Text>
                 )}
               </View>
               <View style={styles.teamRow}>
-                <Text style={styles.teamName} numberOfLines={1}>{event.homeTeam}</Text>
+                <Text style={[styles.teamName, dynamicStyles.teamName]} numberOfLines={1}>{event.homeTeam}</Text>
                 {event.homeScore != null && (
-                  <Text style={styles.score}>{event.homeScore}</Text>
+                  <Text style={[styles.score, dynamicStyles.score]}>{event.homeScore}</Text>
                 )}
               </View>
             </>
           ) : (
-            <Text style={styles.eventTitle} numberOfLines={2}>{event.title}</Text>
+            <Text style={[styles.eventTitle, dynamicStyles.eventTitle]} numberOfLines={2}>{event.title}</Text>
           )}
         </View>
 
         <View style={styles.bottomRow}>
-          <Text style={styles.leagueText}>{event.league}</Text>
+          <Text style={[styles.leagueText, dynamicStyles.leagueText]}>{event.league}</Text>
           <View style={styles.serviceBadges}>
             {matchingServices.slice(0, 3).map((sId) => {
               const service = SERVICE_MAP[sId];
               if (!service) return null;
               return (
                 <View key={sId} style={[styles.serviceBadge, { backgroundColor: service.color }]}>
-                  <Text style={styles.serviceBadgeText} numberOfLines={1}>
+                  <Text style={[styles.serviceBadgeText, dynamicStyles.serviceBadgeText]} numberOfLines={1}>
                     {service.name}
                   </Text>
                 </View>
@@ -150,21 +165,13 @@ export function EventCard({ event, userServices, onPress }: EventCardProps) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: TV_SIZES.cardWidth,
-    marginRight: TV_SIZES.cardGap,
-  },
   card: {
-    height: TV_SIZES.cardHeight,
     backgroundColor: '#1A1F2E',
     borderRadius: 16,
-    padding: 20,
     justifyContent: 'space-between',
-    borderWidth: TV_SIZES.focusBorderWidth,
     borderColor: 'transparent',
   },
   cardFocused: {
-    borderColor: TV_SIZES.focusBorderColor,
     backgroundColor: '#252D3D',
   },
   topRow: {
@@ -179,12 +186,10 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#FFFFFF',
-    fontSize: TV_SIZES.badgeSize,
     fontWeight: '700',
   },
   channelText: {
     color: '#8B95A5',
-    fontSize: TV_SIZES.badgeSize,
     fontWeight: '600',
   },
   middleRow: {
@@ -199,19 +204,16 @@ const styles = StyleSheet.create({
   },
   teamName: {
     color: '#FFFFFF',
-    fontSize: TV_SIZES.titleSize,
     fontWeight: '600',
     flex: 1,
   },
   score: {
     color: '#FFFFFF',
-    fontSize: TV_SIZES.titleSize,
     fontWeight: '700',
     marginLeft: 12,
   },
   eventTitle: {
     color: '#FFFFFF',
-    fontSize: TV_SIZES.titleSize,
     fontWeight: '600',
   },
   bottomRow: {
@@ -221,7 +223,6 @@ const styles = StyleSheet.create({
   },
   leagueText: {
     color: '#8B95A5',
-    fontSize: TV_SIZES.subtitleSize,
     fontWeight: '500',
   },
   serviceBadges: {
@@ -235,7 +236,6 @@ const styles = StyleSheet.create({
   },
   serviceBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
     fontWeight: '700',
   },
   watchHint: {

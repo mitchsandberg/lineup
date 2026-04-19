@@ -7,8 +7,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { MAJOR_SERVICES, LEAGUE_SERVICES } from '@/data/services';
-import { TV_SIZES } from '@/lib/constants';
+import { getSizesForWidth } from '@/lib/constants';
 
 interface ServiceSelectorProps {
   selectedServices: string[];
@@ -16,16 +17,19 @@ interface ServiceSelectorProps {
 }
 
 export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorProps) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
+
   return (
     <ScrollView
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, isMobile && { padding: 20, paddingTop: 60 }]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.heading}>My Streaming Services</Text>
+      <Text style={[styles.heading, isMobile && { fontSize: 26 }]}>My Streaming Services</Text>
       <Text style={styles.subheading}>
         Select the services you subscribe to. Only events available on your services will be shown.
       </Text>
-      <View style={styles.grid}>
+      <View style={[styles.grid, isMobile && { gap: 12 }]}>
         {MAJOR_SERVICES.map((service) => (
           <ServiceToggle
             key={service.id}
@@ -33,11 +37,12 @@ export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorP
             color={service.color}
             isSelected={selectedServices.includes(service.id)}
             onPress={() => onToggle(service.id)}
+            compact={isMobile}
           />
         ))}
       </View>
       <Text style={styles.sectionLabel}>League Packages</Text>
-      <View style={styles.grid}>
+      <View style={[styles.grid, isMobile && { gap: 12 }]}>
         {LEAGUE_SERVICES.map((service) => (
           <ServiceToggle
             key={service.id}
@@ -45,6 +50,7 @@ export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorP
             color={service.color}
             isSelected={selectedServices.includes(service.id)}
             onPress={() => onToggle(service.id)}
+            compact={isMobile}
           />
         ))}
       </View>
@@ -57,21 +63,25 @@ function ServiceToggle({
   color,
   isSelected,
   onPress,
+  compact,
 }: {
   name: string;
   color: string;
   isSelected: boolean;
   onPress: () => void;
+  compact?: boolean;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const { width } = useWindowDimensions();
+  const sizes = getSizesForWidth(width);
 
   const handleFocus = useCallback(() => {
     Animated.spring(scaleAnim, {
-      toValue: TV_SIZES.focusScale,
+      toValue: sizes.focusScale,
       useNativeDriver: true,
       friction: 8,
     }).start();
-  }, [scaleAnim]);
+  }, [scaleAnim, sizes.focusScale]);
 
   const handleBlur = useCallback(() => {
     Animated.spring(scaleAnim, {
@@ -89,12 +99,13 @@ function ServiceToggle({
         onPress={onPress}
         style={({ focused }) => [
           styles.toggle,
+          compact && { width: 160, height: 70, paddingHorizontal: 14 },
           isSelected && { backgroundColor: color, borderColor: color },
           focused && styles.toggleFocused,
         ]}
       >
-        <Text style={styles.checkmark}>{isSelected ? '✓' : ''}</Text>
-        <Text style={styles.serviceName}>{name}</Text>
+        <Text style={[styles.checkmark, compact && { fontSize: 18, width: 24 }]}>{isSelected ? '✓' : ''}</Text>
+        <Text style={[styles.serviceName, compact && { fontSize: 16 }]}>{name}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -102,7 +113,7 @@ function ServiceToggle({
 
 const styles = StyleSheet.create({
   container: {
-    padding: TV_SIZES.rowPadding,
+    padding: 60,
     paddingTop: 80,
   },
   heading: {

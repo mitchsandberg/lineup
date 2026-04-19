@@ -1,25 +1,33 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { EventCard } from './event-card';
 import { SportEvent } from '@/lib/types';
-import { TV_SIZES } from '@/lib/constants';
+import { type ResponsiveSizes } from '@/lib/constants';
 
 interface EventRowProps {
   label: string;
   events: SportEvent[];
   userServices: string[];
+  sizes: ResponsiveSizes;
   liveCount?: number;
 }
 
-export function EventRow({ label, events, userServices }: EventRowProps) {
+export function EventRow({ label, events, userServices, sizes }: EventRowProps) {
   if (events.length === 0) return null;
 
   const liveCount = events.filter((e) => e.status === 'live').length;
 
+  const dynamicStyles = useMemo(() => ({
+    labelRow: { paddingHorizontal: sizes.rowPadding, marginBottom: sizes.rowPadding < 32 ? 10 : 16 },
+    label: { fontSize: sizes.sectionLabelSize },
+    count: { fontSize: sizes.subtitleSize + 2 },
+    listContent: { paddingHorizontal: sizes.rowPadding },
+  }), [sizes]);
+
   return (
     <View style={styles.container}>
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>{label}</Text>
+      <View style={[styles.labelRow, dynamicStyles.labelRow]}>
+        <Text style={[styles.label, dynamicStyles.label]}>{label}</Text>
         {liveCount > 0 && (
           <View style={styles.liveBadge}>
             <Text style={styles.liveBadgeText}>
@@ -27,16 +35,16 @@ export function EventRow({ label, events, userServices }: EventRowProps) {
             </Text>
           </View>
         )}
-        <Text style={styles.count}>{events.length} game{events.length !== 1 ? 's' : ''}</Text>
+        <Text style={[styles.count, dynamicStyles.count]}>{events.length} game{events.length !== 1 ? 's' : ''}</Text>
       </View>
       <FlatList
         horizontal
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <EventCard event={item} userServices={userServices} />
+          <EventCard event={item} userServices={userServices} sizes={sizes} />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={dynamicStyles.listContent}
         showsHorizontalScrollIndicator={false}
         style={styles.list}
       />
@@ -55,13 +63,10 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: TV_SIZES.rowPadding,
-    marginBottom: 16,
     gap: 12,
   },
   label: {
     color: '#FFFFFF',
-    fontSize: TV_SIZES.sectionLabelSize,
     fontWeight: '700',
   },
   liveBadge: {
@@ -77,10 +82,6 @@ const styles = StyleSheet.create({
   },
   count: {
     color: '#4A5568',
-    fontSize: 18,
     fontWeight: '500',
-  },
-  listContent: {
-    paddingHorizontal: TV_SIZES.rowPadding,
   },
 });

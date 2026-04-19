@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import {
   Animated,
   FlatList,
@@ -7,17 +7,26 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SPORT_FILTERS, TV_SIZES } from '@/lib/constants';
+import { SPORT_FILTERS, type ResponsiveSizes } from '@/lib/constants';
 import { SportCategory } from '@/lib/types';
 
 interface SportFilterProps {
   selected: SportCategory;
   onSelect: (sport: SportCategory) => void;
+  sizes: ResponsiveSizes;
 }
 
-export function SportFilter({ selected, onSelect }: SportFilterProps) {
+export function SportFilter({ selected, onSelect, sizes }: SportFilterProps) {
+  const dynamicStyles = useMemo(() => ({
+    container: { height: sizes.filterHeight + 16, marginBottom: sizes.rowPadding < 32 ? 4 : 8 },
+    listContent: { paddingHorizontal: sizes.rowPadding, gap: sizes.rowPadding < 32 ? 8 : 12 },
+    chipLabel: { fontSize: sizes.rowPadding < 32 ? 14 : 18 },
+    chipIcon: { fontSize: sizes.rowPadding < 32 ? 16 : 20 },
+    chip: { paddingHorizontal: sizes.rowPadding < 32 ? 14 : 20, paddingVertical: sizes.rowPadding < 32 ? 8 : 10 },
+  }), [sizes]);
+
   return (
-    <View style={styles.container}>
+    <View style={dynamicStyles.container}>
       <FlatList
         horizontal
         data={SPORT_FILTERS}
@@ -28,9 +37,11 @@ export function SportFilter({ selected, onSelect }: SportFilterProps) {
             icon={item.icon}
             isSelected={selected === item.id}
             onPress={() => onSelect(item.id)}
+            sizes={sizes}
+            dynamicStyles={dynamicStyles}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, dynamicStyles.listContent]}
         showsHorizontalScrollIndicator={false}
       />
     </View>
@@ -42,11 +53,15 @@ function FilterChip({
   icon,
   isSelected,
   onPress,
+  sizes,
+  dynamicStyles,
 }: {
   label: string;
   icon: string;
   isSelected: boolean;
   onPress: () => void;
+  sizes: ResponsiveSizes;
+  dynamicStyles: Record<string, object>;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -74,14 +89,16 @@ function FilterChip({
         onPress={onPress}
         style={({ focused }) => [
           styles.chip,
+          dynamicStyles.chip,
           isSelected && styles.chipSelected,
           focused && styles.chipFocused,
         ]}
       >
-        <Text style={styles.chipIcon}>{icon}</Text>
+        <Text style={[styles.chipIcon, dynamicStyles.chipIcon]}>{icon}</Text>
         <Text
           style={[
             styles.chipLabel,
+            dynamicStyles.chipLabel,
             isSelected && styles.chipLabelSelected,
           ]}
         >
@@ -93,20 +110,12 @@ function FilterChip({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    height: TV_SIZES.filterHeight + 16,
-    marginBottom: 8,
-  },
   listContent: {
-    paddingHorizontal: TV_SIZES.rowPadding,
-    gap: 12,
     alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
     borderRadius: 24,
     backgroundColor: '#1A1F2E',
     borderWidth: 2,
@@ -119,12 +128,9 @@ const styles = StyleSheet.create({
   chipFocused: {
     borderColor: '#FFFFFF',
   },
-  chipIcon: {
-    fontSize: 20,
-  },
+  chipIcon: {},
   chipLabel: {
     color: '#FFFFFF',
-    fontSize: 18,
     fontWeight: '600',
   },
   chipLabelSelected: {

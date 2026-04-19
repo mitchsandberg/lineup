@@ -36,3 +36,43 @@ export const TV_SIZES = {
   focusBorderColor: '#FFFFFF',
   focusScale: 1.05,
 } as const;
+
+const MOBILE_SIZES = {
+  cardWidth: 260,
+  cardHeight: 170,
+  cardGap: 12,
+  rowPadding: 16,
+  headerHeight: 56,
+  filterHeight: 44,
+  sectionLabelSize: 20,
+  titleSize: 16,
+  subtitleSize: 13,
+  badgeSize: 11,
+  focusBorderWidth: 3,
+  focusBorderColor: '#FFFFFF',
+  focusScale: 1.03,
+} as const;
+
+const TABLET_SIZES = {
+  cardWidth: 300,
+  cardHeight: 185,
+  cardGap: 16,
+  rowPadding: 32,
+  headerHeight: 64,
+  filterHeight: 52,
+  sectionLabelSize: 24,
+  titleSize: 19,
+  subtitleSize: 14,
+  badgeSize: 12,
+  focusBorderWidth: 3,
+  focusBorderColor: '#FFFFFF',
+  focusScale: 1.04,
+} as const;
+
+export type ResponsiveSizes = typeof TV_SIZES;
+
+export function getSizesForWidth(width: number): ResponsiveSizes {
+  if (width < 600) return MOBILE_SIZES;
+  if (width < 1024) return TABLET_SIZES;
+  return TV_SIZES;
+}

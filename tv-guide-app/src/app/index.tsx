@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -11,15 +11,16 @@ import { EventRow } from '@/components/event-row';
 import { Onboarding } from '@/components/onboarding';
 import { SportFilter } from '@/components/sport-filter';
 import { fetchEvents, groupEventsByTime, groupEventsBySport } from '@/lib/api';
-import { TV_SIZES } from '@/lib/constants';
 import { GroupedEvents, SportEvent } from '@/lib/types';
 import { usePreferences } from '@/hooks/use-preferences';
+import { useResponsive } from '@/hooks/use-responsive';
 
 export default function GuideScreen() {
   const [events, setEvents] = useState<SportEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { prefs, setSport, toggleService, completeOnboarding, loaded } = usePreferences();
+  const sizes = useResponsive();
 
   const loadEvents = useCallback(async () => {
     try {
@@ -53,6 +54,22 @@ export default function GuideScreen() {
     ? groupEventsBySport(filteredEvents)
     : groupEventsByTime(filteredEvents);
 
+  const isMobile = sizes.rowPadding < 32;
+
+  const dynamicStyles = useMemo(() => ({
+    header: {
+      paddingHorizontal: sizes.rowPadding,
+      paddingTop: isMobile ? 16 : 80,
+      paddingBottom: isMobile ? 8 : 16,
+    },
+    headerTitle: { fontSize: isMobile ? 28 : 42 },
+    headerSubtitle: { fontSize: isMobile ? 16 : 22 },
+    emptyText: { fontSize: isMobile ? 22 : 28 },
+    emptySubtext: { fontSize: isMobile ? 16 : 20 },
+    emptyIcon: { width: isMobile ? 60 : 80, height: isMobile ? 60 : 80, borderRadius: isMobile ? 30 : 40 },
+    emptyIconText: { fontSize: isMobile ? 28 : 36 },
+  }), [sizes, isMobile]);
+
   if (!loaded || loading) {
     return (
       <View style={styles.centerContainer}>
@@ -82,9 +99,9 @@ export default function GuideScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Lineup</Text>
-        <Text style={styles.headerSubtitle}>
+      <View style={[styles.header, dynamicStyles.header]}>
+        <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Lineup</Text>
+        <Text style={[styles.headerSubtitle, dynamicStyles.headerSubtitle]}>
           {new Date().toLocaleDateString(undefined, {
             weekday: 'long',
             month: 'long',
@@ -93,15 +110,15 @@ export default function GuideScreen() {
         </Text>
       </View>
 
-      <SportFilter selected={prefs.selectedSport} onSelect={setSport} />
+      <SportFilter selected={prefs.selectedSport} onSelect={setSport} sizes={sizes} />
 
       {grouped.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIconText}>—</Text>
+          <View style={[styles.emptyIconContainer, dynamicStyles.emptyIcon]}>
+            <Text style={[styles.emptyIconText, dynamicStyles.emptyIconText]}>—</Text>
           </View>
-          <Text style={styles.emptyText}>No games right now</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, dynamicStyles.emptyText]}>No games right now</Text>
+          <Text style={[styles.emptySubtext, dynamicStyles.emptySubtext]}>
             {prefs.selectedSport !== 'all'
               ? 'Try selecting a different sport or check back later'
               : 'When games are on, just press select to start watching — Lineup opens the right app for you'}
@@ -118,6 +135,7 @@ export default function GuideScreen() {
               label={group.label}
               events={group.events}
               userServices={prefs.selectedServices}
+              sizes={sizes}
             />
           ))}
           <View style={styles.scrollPadding} />
@@ -134,21 +152,16 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' ? { height: '100vh' as unknown as number } : {}),
   },
   header: {
-    paddingHorizontal: TV_SIZES.rowPadding,
-    paddingTop: 80,
-    paddingBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 42,
     fontWeight: '800',
   },
   headerSubtitle: {
     color: '#8B95A5',
-    fontSize: 22,
     fontWeight: '500',
   },
   scrollView: {
@@ -181,9 +194,6 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
     borderWidth: 2,
     borderColor: '#2D3548',
     justifyContent: 'center',
@@ -192,17 +202,14 @@ const styles = StyleSheet.create({
   },
   emptyIconText: {
     color: '#4A5568',
-    fontSize: 36,
     fontWeight: '300',
   },
   emptyText: {
     color: '#FFFFFF',
-    fontSize: 28,
     fontWeight: '600',
   },
   emptySubtext: {
     color: '#8B95A5',
-    fontSize: 20,
     textAlign: 'center',
     maxWidth: 400,
   },
