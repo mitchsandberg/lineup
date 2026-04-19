@@ -5,39 +5,55 @@ end sub
 sub fetchEvents()
     url = GetApiBaseUrl() + "/api/events"
 
-    request = CreateObject("roUrlTransfer")
-    request.SetUrl(url)
-    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    request.AddHeader("Content-Type", "application/json")
-    request.AddHeader("User-Agent", "Lineup/1.0")
-    request.InitClientCertificates()
-    request.EnableEncodings(true)
+    maxRetries = 3
+    for attempt = 1 to maxRetries
+        request = CreateObject("roUrlTransfer")
+        request.SetUrl(url)
+        request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+        request.AddHeader("Content-Type", "application/json")
+        request.AddHeader("User-Agent", "Lineup/1.0")
+        request.InitClientCertificates()
 
-    port = CreateObject("roMessagePort")
-    request.SetMessagePort(port)
+        port = CreateObject("roMessagePort")
+        request.SetMessagePort(port)
 
-    if request.AsyncGetToString()
-        msg = Wait(10000, port)
-        if Type(msg) = "roUrlEvent"
-            responseCode = msg.GetResponseCode()
-            if responseCode = 200
-                body = msg.GetString()
-                parsed = ParseJson(body)
-                if parsed <> invalid and parsed.events <> invalid
-                    contentNode = parseEventsToContent(parsed.events)
-                    m.top.content = contentNode
+        if request.AsyncGetToString()
+            msg = Wait(30000, port)
+            if Type(msg) = "roUrlEvent"
+                responseCode = msg.GetResponseCode()
+                if responseCode = 200
+                    body = msg.GetString()
+                    parsed = ParseJson(body)
+                    if parsed <> invalid and parsed.events <> invalid
+                        contentNode = parseEventsToContent(parsed.events)
+                        m.top.content = contentNode
+                        return
+                    else
+                        m.top.error = "Invalid response format"
+                        return
+                    end if
                 else
-                    m.top.error = "Invalid response format"
+                    if attempt = maxRetries
+                        m.top.error = "HTTP " + responseCode.ToStr()
+                        return
+                    end if
                 end if
             else
-                m.top.error = "HTTP " + responseCode.ToStr()
+                request.AsyncCancel()
+                if attempt = maxRetries
+                    m.top.error = "Request timeout - API may be starting up. Try again in a minute."
+                    return
+                end if
             end if
         else
-            m.top.error = "Request timeout"
+            if attempt = maxRetries
+                m.top.error = "Failed to start request"
+                return
+            end if
         end if
-    else
-        m.top.error = "Failed to start request"
-    end if
+
+        Sleep(2000)
+    end for
 end sub
 
 function parseEventsToContent(events as Object) as Object
@@ -45,10 +61,9 @@ function parseEventsToContent(events as Object) as Object
 
     for each evt in events
         child = rootNode.CreateChild("ContentNode")
-
+        child.title = safeStr(evt.title)
         child.AddFields({
             eventId: safeStr(evt.id),
-            title: safeStr(evt.title),
             sport: safeStr(evt.sport),
             league: safeStr(evt.league),
             channel: safeStr(evt.channel),

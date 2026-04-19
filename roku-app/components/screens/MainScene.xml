@@ -9,151 +9,133 @@
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
 
     <children>
+        <!-- Guide screen -->
         <Rectangle
-            id="background"
+            id="guidePanel"
             width="1280"
             height="720"
             color="#0D1117"
         >
-            <!-- Header -->
-            <LayoutGroup
-                id="header"
-                layoutDirection="horiz"
-                horizAlignment="left"
-                vertAlignment="center"
-                translation="[60, 30]"
-                itemSpacings="[0]"
-            >
-                <Label
-                    id="titleLabel"
-                    text="Lineup"
-                    font="font:LargeBoldSystemFont"
-                    color="#FFFFFF"
-                />
-            </LayoutGroup>
-
+            <Label
+                id="titleLabel"
+                text="Lineup"
+                translation="[60, 25]"
+                font="font:LargeBoldSystemFont"
+                color="#FFFFFF"
+            />
             <Label
                 id="dateLabel"
-                translation="[1060, 38]"
+                translation="[1060, 33]"
                 font="font:SmallSystemFont"
                 color="#8B95A5"
                 horizAlign="right"
                 width="180"
             />
 
-            <!-- Tab bar -->
-            <LayoutGroup
-                id="tabBar"
-                layoutDirection="horiz"
-                translation="[60, 75]"
-                itemSpacings="[20]"
-            >
-                <ButtonGroup
-                    id="tabButtons"
-                    buttons="[&quot;Guide&quot;, &quot;Settings&quot;]"
-                    textColor="#8B95A5"
-                    focusedTextColor="#FFFFFF"
-                />
-            </LayoutGroup>
-
-            <!-- Sport filter row -->
-            <LayoutGroup
-                id="filterRow"
-                layoutDirection="horiz"
-                translation="[60, 130]"
-                itemSpacings="[12]"
-            >
-                <LabelList
-                    id="sportFilter"
-                    vertFocusAnimationStyle="floatingFocus"
-                    numRows="1"
-                    itemSize="[120, 40]"
-                    drawFocusFeedback="true"
-                    focusBitmapBlendColor="#1A1F2E"
-                />
-            </LayoutGroup>
-
-            <!-- Events area -->
-            <MarkupList
-                id="eventRowList"
-                translation="[60, 190]"
-                itemSize="[1160, 210]"
-                numRows="3"
-                itemSpacing="[0, 8]"
-                drawFocusFeedback="true"
-                vertFocusAnimationStyle="floatingFocus"
-                focusBitmapBlendColor="#252D3D"
-                itemComponentName="EventRow"
+            <!-- Tab indicator -->
+            <Label
+                id="tabGuideLabel"
+                text="Guide"
+                translation="[60, 72]"
+                font="font:SmallBoldSystemFont"
+                color="#FFFFFF"
+            />
+            <Label
+                id="tabSettingsLabel"
+                text="Settings"
+                translation="[160, 72]"
+                font="font:SmallSystemFont"
+                color="#8B95A5"
             />
 
-            <!-- Loading indicator -->
-            <LayoutGroup
-                id="loadingGroup"
-                layoutDirection="vert"
-                horizAlignment="center"
-                vertAlignment="center"
-                translation="[540, 360]"
-                visible="true"
+            <!-- Sport filter bar -->
+            <ButtonGroup
+                id="sportFilter"
+                translation="[60, 105]"
+                textColor="#8B95A5"
+                focusedTextColor="#FFFFFF"
+            />
+
+            <!-- Clipping region for scrollable events -->
+            <Rectangle
+                id="eventsClip"
+                translation="[0, 155]"
+                width="1280"
+                height="565"
+                color="#00000000"
+                clippingRect="[0, 0, 1280, 565]"
             >
-                <BusySpinner
-                    id="spinner"
-                    poster="pkg:/images/spinner.png"
-                    visible="true"
-                />
-                <Label
-                    id="loadingLabel"
-                    text="Loading sports..."
-                    font="font:SmallSystemFont"
-                    color="#8B95A5"
-                />
-            </LayoutGroup>
+                <Group id="eventsGroup" translation="[60, 0]" />
+            </Rectangle>
+
+            <!-- Loading label -->
+            <Label
+                id="loadingLabel"
+                text="Loading sports..."
+                translation="[540, 360]"
+                font="font:MediumSystemFont"
+                color="#8B95A5"
+                visible="true"
+            />
 
             <!-- Empty state -->
             <Label
                 id="emptyLabel"
-                text="No events found"
-                translation="[540, 360]"
+                text="No live or upcoming events"
+                translation="[440, 360]"
                 font="font:MediumSystemFont"
                 color="#8B95A5"
                 visible="false"
             />
-
-            <!-- Settings panel (hidden by default) -->
-            <Rectangle
-                id="settingsPanel"
-                width="1280"
-                height="720"
-                color="#0D1117"
-                visible="false"
-            >
-                <Label
-                    id="settingsTitle"
-                    text="Streaming Services"
-                    translation="[60, 30]"
-                    font="font:LargeBoldSystemFont"
-                    color="#FFFFFF"
-                />
-                <Label
-                    id="settingsSubtitle"
-                    text="Select the services you subscribe to"
-                    translation="[60, 75]"
-                    font="font:SmallSystemFont"
-                    color="#8B95A5"
-                />
-                <CheckList
-                    id="serviceCheckList"
-                    translation="[60, 120]"
-                    itemSize="[400, 50]"
-                    numRows="6"
-                    checkedIconUri=""
-                    uncheckedIconUri=""
-                    focusBitmapBlendColor="#1A1F2E"
-                    drawFocusFeedback="true"
-                />
-            </Rectangle>
         </Rectangle>
 
-        <!-- API data fetcher task -->
+        <!-- Settings screen (hidden by default) -->
+        <Rectangle
+            id="settingsPanel"
+            width="1280"
+            height="720"
+            color="#0D1117"
+            visible="false"
+        >
+            <Label
+                id="settingsTitleLabel"
+                text="Lineup"
+                translation="[60, 25]"
+                font="font:LargeBoldSystemFont"
+                color="#FFFFFF"
+            />
+            <Label
+                id="settingsTabGuide"
+                text="Guide"
+                translation="[60, 72]"
+                font="font:SmallSystemFont"
+                color="#8B95A5"
+            />
+            <Label
+                id="settingsTabSettings"
+                text="Settings"
+                translation="[160, 72]"
+                font="font:SmallBoldSystemFont"
+                color="#FFFFFF"
+            />
+            <Label
+                id="settingsHeading"
+                text="Streaming Services"
+                translation="[60, 115]"
+                font="font:MediumBoldSystemFont"
+                color="#FFFFFF"
+            />
+            <Label
+                id="settingsSubheading"
+                text="Select the services you subscribe to"
+                translation="[60, 148]"
+                font="font:SmallSystemFont"
+                color="#8B95A5"
+            />
+
+            <Group id="serviceListGroup" translation="[60, 185]" />
+        </Rectangle>
+
         <EventFetchTask id="fetchTask" />
     </children>
 </component>
