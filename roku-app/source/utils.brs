@@ -51,25 +51,16 @@ function IsChannelInstalled(channelId as String) as Boolean
 end function
 
 sub LaunchChannel(channelId as String, params as String)
-    urlTransfer = CreateObject("roUrlTransfer")
-    device = CreateObject("roDeviceInfo")
-    ipAddrs = device.GetIPAddrs()
-
-    ip = ""
-    for each key in ipAddrs
-        ip = ipAddrs[key]
-        exit for
-    end for
-
-    if ip = "" then return
-
-    url = "http://" + ip + ":8060/launch/" + channelId
+    url = "http://127.0.0.1:8060/launch/" + channelId
     if params <> "" and params <> invalid
         url = url + "?" + params
     end if
 
+    urlTransfer = CreateObject("roUrlTransfer")
     urlTransfer.SetUrl(url)
-    urlTransfer.PostFromString("")
+    port = CreateObject("roMessagePort")
+    urlTransfer.SetMessagePort(port)
+    urlTransfer.AsyncPostFromString("")
 end sub
 
 function ReadRegistrySetting(section as String, key as String) as Dynamic

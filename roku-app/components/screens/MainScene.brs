@@ -521,6 +521,42 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     watchHint.visible = false
     card.AppendChild(watchHint)
 
+    border = CreateObject("roSGNode", "Rectangle")
+    border.id = "focusBorder"
+    border.width = cardW
+    border.height = cardH
+    border.color = "#00000000"
+    border.translation = [0, 0]
+    border.visible = false
+
+    borderTop = CreateObject("roSGNode", "Rectangle")
+    borderTop.width = cardW
+    borderTop.height = 3
+    borderTop.color = "#FFFFFF"
+    border.AppendChild(borderTop)
+
+    borderBottom = CreateObject("roSGNode", "Rectangle")
+    borderBottom.width = cardW
+    borderBottom.height = 3
+    borderBottom.color = "#FFFFFF"
+    borderBottom.translation = [0, cardH - 3]
+    border.AppendChild(borderBottom)
+
+    borderLeft = CreateObject("roSGNode", "Rectangle")
+    borderLeft.width = 3
+    borderLeft.height = cardH
+    borderLeft.color = "#FFFFFF"
+    border.AppendChild(borderLeft)
+
+    borderRight = CreateObject("roSGNode", "Rectangle")
+    borderRight.width = 3
+    borderRight.height = cardH
+    borderRight.color = "#FFFFFF"
+    borderRight.translation = [cardW - 3, 0]
+    border.AppendChild(borderRight)
+
+    card.AppendChild(border)
+
     return card
 end function
 
@@ -537,12 +573,12 @@ sub updateCardFocus()
             else
                 cardInfo.node.color = "#1A1F2E"
             end if
+
             childCount = cardInfo.node.GetChildCount()
             for i = 0 to childCount - 1
                 child = cardInfo.node.GetChild(i)
-                if child.id = "watchHint"
-                    child.visible = isFocused
-                end if
+                if child.id = "watchHint" then child.visible = isFocused
+                if child.id = "focusBorder" then child.visible = isFocused
             end for
         end for
     end for
