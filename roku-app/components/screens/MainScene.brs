@@ -1,7 +1,8 @@
 sub Init()
     m.guidePanel = m.top.FindNode("guidePanel")
     m.settingsPanel = m.top.FindNode("settingsPanel")
-    m.sportFilter = m.top.FindNode("sportFilter")
+    m.sportSelectorBg = m.top.FindNode("sportSelectorBg")
+    m.sportSelectorLabel = m.top.FindNode("sportSelectorLabel")
     m.eventsGroup = m.top.FindNode("eventsGroup")
     m.loadingLabel = m.top.FindNode("loadingLabel")
     m.emptyLabel = m.top.FindNode("emptyLabel")
@@ -9,7 +10,7 @@ sub Init()
     m.serviceListGroup = m.top.FindNode("serviceListGroup")
 
     m.currentTab = 0
-    m.currentSport = "all"
+    m.sportFilterIdx = 0
     m.allEvents = []
     m.scrollOffset = 0
     m.maxScroll = 0
@@ -22,14 +23,7 @@ sub Init()
     m.focusMode = "filter"
 
     m.dateLabel.text = GetTodayDateString()
-
-    filters = GetSportFilters()
-    filterLabels = []
-    for each f in filters
-        filterLabels.Push(f.label)
-    end for
-    m.sportFilter.buttons = filterLabels
-    m.sportFilter.ObserveField("buttonSelected", "onSportSelected")
+    updateSportLabel()
 
     m.fetchTask = m.top.FindNode("fetchTask")
     m.fetchTask.ObserveField("content", "onEventsLoaded")
@@ -37,7 +31,38 @@ sub Init()
 
     buildServiceList()
     m.fetchTask.control = "run"
-    m.sportFilter.SetFocus(true)
+
+    m.top.SetFocus(true)
+    updateFilterVisual()
+end sub
+
+' ─── SPORT FILTER ───
+
+sub updateSportLabel()
+    filters = GetSportFilters()
+    if m.sportFilterIdx >= 0 and m.sportFilterIdx < filters.Count()
+        m.sportSelectorLabel.text = filters[m.sportFilterIdx].label
+    end if
+end sub
+
+sub cycleSport(direction as Integer)
+    filters = GetSportFilters()
+    m.sportFilterIdx = m.sportFilterIdx + direction
+    if m.sportFilterIdx < 0 then m.sportFilterIdx = filters.Count() - 1
+    if m.sportFilterIdx >= filters.Count() then m.sportFilterIdx = 0
+    updateSportLabel()
+    m.scrollOffset = 0
+    m.focusRow = 0
+    m.focusCol = 0
+    filterAndDisplayEvents()
+end sub
+
+sub updateFilterVisual()
+    if m.focusMode = "filter"
+        m.sportSelectorBg.color = "#252D3D"
+    else
+        m.sportSelectorBg.color = "#1A1F2E"
+    end if
 end sub
 
 ' ─── DATA ───
@@ -61,21 +86,15 @@ sub onFetchError()
     m.loadingLabel.text = m.fetchTask.error
 end sub
 
-sub onSportSelected()
-    idx = m.sportFilter.buttonSelected
-    filters = GetSportFilters()
-    if idx >= 0 and idx < filters.Count()
-        m.currentSport = filters[idx].id
-        m.scrollOffset = 0
-        m.focusRow = 0
-        m.focusCol = 0
-        filterAndDisplayEvents()
-    end if
-end sub
-
 ' ─── FILTERING ───
 
 sub filterAndDisplayEvents()
+    filters = GetSportFilters()
+    currentSport = "all"
+    if m.sportFilterIdx >= 0 and m.sportFilterIdx < filters.Count()
+        currentSport = filters[m.sportFilterIdx].id
+    end if
+
     selectedSvcSet = {}
     for each svcId in m.selectedServices
         selectedSvcSet[svcId] = true
@@ -90,7 +109,7 @@ sub filterAndDisplayEvents()
 
         sport = ""
         if evt.HasField("sport") and evt.sport <> invalid then sport = evt.sport
-        if shouldInclude and m.currentSport <> "all" and sport <> m.currentSport
+        if shouldInclude and currentSport <> "all" and sport <> currentSport
             shouldInclude = false
         end if
 
@@ -111,12 +130,12 @@ sub filterAndDisplayEvents()
         end if
     end for
 
-    displayEvents(filtered)
+    displayEvents(filtered, currentSport)
 end sub
 
 ' ─── RENDERING ───
 
-sub displayEvents(events as Object)
+sub displayEvents(events as Object, currentSport as String)
     m.eventsGroup.RemoveChildrenIndex(m.eventsGroup.GetChildCount(), 0)
     m.cardGrid = []
 
@@ -126,13 +145,13 @@ sub displayEvents(events as Object)
     end if
     m.emptyLabel.visible = false
 
-    if m.currentSport = "all"
+    if currentSport = "all"
         renderBySport(events)
     else
         renderFlat(events)
     end if
 
-    m.eventsGroup.translation = [60, 0]
+    m.eventsGroup.translation = [0, 0]
     m.scrollOffset = 0
     if m.focusMode = "cards" then updateCardFocus()
 end sub
@@ -141,8 +160,8 @@ sub renderBySport(events as Object)
     sportOrder = ["nfl", "nba", "mlb", "nhl", "soccer", "college-football", "college-basketball", "mma", "golf", "tennis", "racing", "other"]
     sportLabels = {
         "nfl": "NFL", "nba": "NBA", "mlb": "MLB", "nhl": "NHL",
-        "soccer": "Soccer", "college-football": "CFB",
-        "college-basketball": "CBB", "mma": "MMA",
+        "soccer": "Soccer", "college-football": "College Football",
+        "college-basketball": "College Basketball", "mma": "MMA",
         "golf": "Golf", "tennis": "Tennis", "racing": "Racing", "other": "Other"
     }
 
@@ -179,7 +198,7 @@ sub renderBySport(events as Object)
             sLbl.color = "#FFFFFF"
             sLbl.translation = [0, yPos]
             m.eventsGroup.AppendChild(sLbl)
-            yPos = yPos + 30
+            yPos = yPos + 32
 
             rowCards = []
             xPos = 0
@@ -189,16 +208,15 @@ sub renderBySport(events as Object)
                 card = buildCard(evt, xPos, yPos)
                 m.eventsGroup.AppendChild(card)
                 rowCards.Push({ node: card, evt: evt })
-                xPos = xPos + 280
+                xPos = xPos + 285
                 cardCount = cardCount + 1
             end for
             m.cardGrid.Push(rowCards)
-
-            yPos = yPos + 195
+            yPos = yPos + 200
         end if
     end for
 
-    m.maxScroll = yPos - 500
+    m.maxScroll = yPos - 520
     if m.maxScroll < 0 then m.maxScroll = 0
 end sub
 
@@ -212,34 +230,34 @@ sub renderFlat(events as Object)
         if cardCount > 0 and cardCount mod 4 = 0
             m.cardGrid.Push(rowCards)
             rowCards = []
-            yPos = yPos + 195
+            yPos = yPos + 200
             xPos = 0
         end if
 
         card = buildCard(evt, xPos, yPos)
         m.eventsGroup.AppendChild(card)
         rowCards.Push({ node: card, evt: evt })
-        xPos = xPos + 280
+        xPos = xPos + 285
         cardCount = cardCount + 1
 
         if cardCount >= 20 then exit for
     end for
 
     if rowCards.Count() > 0 then m.cardGrid.Push(rowCards)
-
-    m.maxScroll = yPos + 195 - 500
+    m.maxScroll = yPos + 200 - 520
     if m.maxScroll < 0 then m.maxScroll = 0
 end sub
 
 function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
-    cardW = 270
-    cardH = 180
+    cardW = 275
+    cardH = 185
 
     card = CreateObject("roSGNode", "Rectangle")
     card.width = cardW
     card.height = cardH
     card.color = "#1A1F2E"
     card.translation = [xPos, yPos]
+    card.cornerRadius = 8
 
     status = "upcoming"
     if evt.HasField("status") and evt.status <> invalid and evt.status <> ""
@@ -247,17 +265,18 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     end if
 
     badge = CreateObject("roSGNode", "Rectangle")
-    badge.translation = [10, 10]
-    badge.height = 22
+    badge.translation = [12, 12]
+    badge.height = 24
+    badge.cornerRadius = 4
     badgeTxt = CreateObject("roSGNode", "Label")
-    badgeTxt.translation = [6, 2]
+    badgeTxt.translation = [8, 3]
     badgeTxt.font = "font:SmallestSystemFont"
     badgeTxt.color = "#FFFFFF"
 
     if status = "live"
         badge.color = "#FF3B30"
         badgeTxt.text = "LIVE"
-        badge.width = 48
+        badge.width = 50
     else if status = "upcoming"
         badge.color = "#2D3548"
         timeStr = ""
@@ -265,11 +284,11 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             timeStr = FormatEventTime(evt.startTime)
         end if
         badgeTxt.text = timeStr
-        badge.width = 78
+        badge.width = 82
     else
         badge.color = "#4A5568"
         badgeTxt.text = "FINAL"
-        badge.width = 55
+        badge.width = 58
     end if
     badge.AppendChild(badgeTxt)
     card.AppendChild(badge)
@@ -277,8 +296,8 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     channel = ""
     if evt.HasField("channel") and evt.channel <> invalid then channel = evt.channel
     chLbl = CreateObject("roSGNode", "Label")
-    chLbl.translation = [cardW - 90, 12]
-    chLbl.width = 80
+    chLbl.translation = [cardW - 90, 14]
+    chLbl.width = 78
     chLbl.horizAlign = "right"
     chLbl.font = "font:SmallestSystemFont"
     chLbl.color = "#8B95A5"
@@ -294,7 +313,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
 
     if homeTeam <> "" and awayTeam <> ""
         hLbl = CreateObject("roSGNode", "Label")
-        hLbl.translation = [10, 42]
+        hLbl.translation = [12, 48]
         hLbl.width = 200
         hLbl.font = "font:SmallBoldSystemFont"
         hLbl.color = "#FFFFFF"
@@ -303,7 +322,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
         card.AppendChild(hLbl)
 
         aLbl = CreateObject("roSGNode", "Label")
-        aLbl.translation = [10, 66]
+        aLbl.translation = [12, 72]
         aLbl.width = 200
         aLbl.font = "font:SmallBoldSystemFont"
         aLbl.color = "#FFFFFF"
@@ -318,7 +337,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             if evt.HasField("awayScore") and evt.awayScore <> invalid then as2 = evt.awayScore
 
             hsL = CreateObject("roSGNode", "Label")
-            hsL.translation = [cardW - 45, 42]
+            hsL.translation = [cardW - 45, 48]
             hsL.width = 35
             hsL.horizAlign = "right"
             hsL.font = "font:SmallBoldSystemFont"
@@ -327,7 +346,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             card.AppendChild(hsL)
 
             asL = CreateObject("roSGNode", "Label")
-            asL.translation = [cardW - 45, 66]
+            asL.translation = [cardW - 45, 72]
             asL.width = 35
             asL.horizAlign = "right"
             asL.font = "font:SmallBoldSystemFont"
@@ -337,8 +356,8 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
         end if
     else
         tL = CreateObject("roSGNode", "Label")
-        tL.translation = [10, 42]
-        tL.width = cardW - 20
+        tL.translation = [12, 48]
+        tL.width = cardW - 24
         tL.font = "font:SmallBoldSystemFont"
         tL.color = "#FFFFFF"
         tL.maxLines = 2
@@ -349,14 +368,14 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
     league = ""
     if evt.HasField("league") and evt.league <> invalid then league = evt.league
     lgL = CreateObject("roSGNode", "Label")
-    lgL.translation = [10, 98]
+    lgL.translation = [12, 104]
     lgL.font = "font:SmallestSystemFont"
     lgL.color = "#8B95A5"
     lgL.text = UCase(league)
     card.AppendChild(lgL)
 
-    svcY = 125
-    svcX = 10
+    svcY = 130
+    svcX = 12
     if evt.HasField("availableServices") and evt.availableServices <> invalid
         badgeCount = 0
         for each svcId in evt.availableServices
@@ -365,25 +384,25 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
             if svc <> invalid
                 shortName = svc.name
                 if svc.DoesExist("short") then shortName = svc.short
-                bw = 55
 
                 svcBg = CreateObject("roSGNode", "Rectangle")
-                svcBg.width = bw
+                svcBg.width = 58
                 svcBg.height = 20
                 svcBg.color = svc.color
                 svcBg.translation = [svcX, svcY]
+                svcBg.cornerRadius = 3
 
                 svcLbl = CreateObject("roSGNode", "Label")
                 svcLbl.text = shortName
                 svcLbl.font = "font:SmallestSystemFont"
                 svcLbl.color = "#FFFFFF"
                 svcLbl.translation = [3, 1]
-                svcLbl.width = bw - 6
+                svcLbl.width = 52
                 svcLbl.horizAlign = "center"
                 svcBg.AppendChild(svcLbl)
                 card.AppendChild(svcBg)
 
-                svcX = svcX + bw + 5
+                svcX = svcX + 63
                 badgeCount = badgeCount + 1
             end if
         end for
@@ -391,7 +410,7 @@ function buildCard(evt as Object, xPos as Integer, yPos as Integer) as Object
 
     watchHint = CreateObject("roSGNode", "Label")
     watchHint.id = "watchHint"
-    watchHint.translation = [10, cardH - 22]
+    watchHint.translation = [12, cardH - 22]
     watchHint.font = "font:SmallestSystemFont"
     watchHint.color = "#30D158"
     watchHint.text = "Press OK to watch"
@@ -410,11 +429,10 @@ sub updateCardFocus()
             cardInfo = row[c]
             isFocused = (r = m.focusRow and c = m.focusCol and m.focusMode = "cards")
             if isFocused
-                cardInfo.node.color = "#252D3D"
+                cardInfo.node.color = "#2A3350"
             else
                 cardInfo.node.color = "#1A1F2E"
             end if
-
             childCount = cardInfo.node.GetChildCount()
             for i = 0 to childCount - 1
                 child = cardInfo.node.GetChild(i)
@@ -431,17 +449,19 @@ sub updateCardFocus()
             cardInfo = row[m.focusCol]
             cardY = cardInfo.node.translation[1]
             visibleTop = m.scrollOffset
-            visibleBottom = m.scrollOffset + 500
+            visibleBottom = m.scrollOffset + 520
 
             if cardY < visibleTop
                 m.scrollOffset = cardY - 30
                 if m.scrollOffset < 0 then m.scrollOffset = 0
-            else if cardY + 180 > visibleBottom
-                m.scrollOffset = cardY + 180 - 500
+            else if cardY + 185 > visibleBottom
+                m.scrollOffset = cardY + 185 - 520
             end if
-            m.eventsGroup.translation = [60, -m.scrollOffset]
+            m.eventsGroup.translation = [0, -m.scrollOffset]
         end if
     end if
+
+    updateFilterVisual()
 end sub
 
 sub launchSelectedCard()
@@ -475,6 +495,7 @@ sub buildServiceList()
         row.height = 44
         row.color = "#1A1F2E"
         row.translation = [0, yPos]
+        row.cornerRadius = 6
 
         isSelected = false
         for each selId in m.selectedServices
@@ -482,7 +503,7 @@ sub buildServiceList()
         end for
 
         checkLbl = CreateObject("roSGNode", "Label")
-        checkLbl.translation = [12, 10]
+        checkLbl.translation = [14, 10]
         checkLbl.font = "font:SmallSystemFont"
         checkLbl.color = "#30D158"
         if isSelected
@@ -492,16 +513,17 @@ sub buildServiceList()
         end if
 
         nameLbl = CreateObject("roSGNode", "Label")
-        nameLbl.translation = [40, 10]
+        nameLbl.translation = [44, 10]
         nameLbl.font = "font:SmallSystemFont"
         nameLbl.color = "#FFFFFF"
         nameLbl.text = svc.name
 
         colorDot = CreateObject("roSGNode", "Rectangle")
-        colorDot.width = 8
-        colorDot.height = 8
+        colorDot.width = 10
+        colorDot.height = 10
         colorDot.color = svc.color
-        colorDot.translation = [480, 18]
+        colorDot.translation = [478, 17]
+        colorDot.cornerRadius = 5
 
         row.AppendChild(checkLbl)
         row.AppendChild(nameLbl)
@@ -542,7 +564,6 @@ sub toggleService()
     else
         toggle.checkLbl.text = " "
     end if
-
     newSelected = []
     for each t in m.serviceToggles
         if t.selected then newSelected.Push(t.svcId)
@@ -558,7 +579,8 @@ sub showGuide()
     m.guidePanel.visible = true
     m.settingsPanel.visible = false
     m.focusMode = "filter"
-    m.sportFilter.SetFocus(true)
+    m.top.SetFocus(true)
+    updateFilterVisual()
     filterAndDisplayEvents()
 end sub
 
@@ -567,6 +589,7 @@ sub showSettings()
     m.guidePanel.visible = false
     m.settingsPanel.visible = true
     m.settingsFocusIdx = 0
+    m.top.SetFocus(true)
     updateSettingsFocus()
 end sub
 
@@ -607,6 +630,14 @@ end function
 
 function handleGuideKeys(key as String) as Boolean
     if m.focusMode = "filter"
+        if key = "left"
+            cycleSport(-1)
+            return true
+        end if
+        if key = "right"
+            cycleSport(1)
+            return true
+        end if
         if key = "down"
             if m.cardGrid.Count() > 0
                 m.focusMode = "cards"
@@ -616,7 +647,7 @@ function handleGuideKeys(key as String) as Boolean
             end if
             return true
         end if
-        if key = "right"
+        if key = "OK"
             showSettings()
             return true
         end if
@@ -633,7 +664,7 @@ function handleGuideKeys(key as String) as Boolean
             else
                 m.focusMode = "filter"
                 updateCardFocus()
-                m.sportFilter.SetFocus(true)
+                updateFilterVisual()
             end if
             return true
         end if
@@ -670,18 +701,18 @@ function handleGuideKeys(key as String) as Boolean
             return true
         end if
 
+        if key = "back"
+            m.focusMode = "filter"
+            updateCardFocus()
+            updateFilterVisual()
+            return true
+        end if
+
         if key = "replay" or key = "play"
             m.loadingLabel.visible = true
             m.loadingLabel.text = "Refreshing..."
             m.emptyLabel.visible = false
             m.fetchTask.control = "run"
-            return true
-        end if
-
-        if key = "back"
-            m.focusMode = "filter"
-            updateCardFocus()
-            m.sportFilter.SetFocus(true)
             return true
         end if
     end if
@@ -690,7 +721,7 @@ function handleGuideKeys(key as String) as Boolean
 end function
 
 function handleSettingsKeys(key as String) as Boolean
-    if key = "back" or key = "left"
+    if key = "back" or key = "options"
         showGuide()
         return true
     end if

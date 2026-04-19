@@ -36,37 +36,54 @@
             <Label
                 id="tabGuideLabel"
                 text="Guide"
-                translation="[60, 72]"
+                translation="[60, 68]"
                 font="font:SmallBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
                 id="tabSettingsLabel"
                 text="Settings"
-                translation="[160, 72]"
+                translation="[140, 68]"
                 font="font:SmallSystemFont"
                 color="#8B95A5"
             />
 
-            <!-- Sport filter bar -->
-            <ButtonGroup
-                id="sportFilter"
-                translation="[60, 105]"
-                textColor="#8B95A5"
-                focusedTextColor="#FFFFFF"
-            />
-
-            <!-- Clipping region for scrollable events -->
+            <!-- Sport selector -->
             <Rectangle
-                id="eventsClip"
-                translation="[0, 155]"
-                width="1280"
-                height="565"
-                color="#00000000"
-                clippingRect="[0, 0, 1280, 565]"
+                id="sportSelectorBg"
+                translation="[60, 98]"
+                width="220"
+                height="36"
+                color="#1A1F2E"
+                cornerRadius="6"
             >
-                <Group id="eventsGroup" translation="[60, 0]" />
+                <Label
+                    id="sportArrowLeft"
+                    text="<"
+                    translation="[10, 6]"
+                    font="font:SmallBoldSystemFont"
+                    color="#8B95A5"
+                />
+                <Label
+                    id="sportSelectorLabel"
+                    text="All Sports"
+                    translation="[30, 6]"
+                    width="160"
+                    horizAlign="center"
+                    font="font:SmallBoldSystemFont"
+                    color="#FFFFFF"
+                />
+                <Label
+                    id="sportArrowRight"
+                    text=">"
+                    translation="[196, 6]"
+                    font="font:SmallBoldSystemFont"
+                    color="#8B95A5"
+                />
             </Rectangle>
+
+            <!-- Scrollable events area -->
+            <Group id="eventsGroup" translation="[60, 148]" />
 
             <!-- Loading label -->
             <Label
@@ -89,7 +106,7 @@
             />
         </Rectangle>
 
-        <!-- Settings screen (hidden by default) -->
+        <!-- Settings screen -->
         <Rectangle
             id="settingsPanel"
             width="1280"
@@ -98,41 +115,35 @@
             visible="false"
         >
             <Label
-                id="settingsTitleLabel"
                 text="Lineup"
                 translation="[60, 25]"
                 font="font:LargeBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
-                id="settingsTabGuide"
                 text="Guide"
-                translation="[60, 72]"
+                translation="[60, 68]"
                 font="font:SmallSystemFont"
                 color="#8B95A5"
             />
             <Label
-                id="settingsTabSettings"
                 text="Settings"
-                translation="[160, 72]"
+                translation="[140, 68]"
                 font="font:SmallBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
-                id="settingsHeading"
                 text="Streaming Services"
-                translation="[60, 115]"
+                translation="[60, 110]"
                 font="font:MediumBoldSystemFont"
                 color="#FFFFFF"
             />
             <Label
-                id="settingsSubheading"
-                text="Select the services you subscribe to"
-                translation="[60, 148]"
+                text="Select the services you subscribe to. Press OK to toggle."
+                translation="[60, 143]"
                 font="font:SmallSystemFont"
                 color="#8B95A5"
             />
-
             <Group id="serviceListGroup" translation="[60, 185]" />
         </Rectangle>
 
