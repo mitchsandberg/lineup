@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="EventRow" extends="Group">
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChanged" />
+        <field id="width" type="float" value="1160" />
+        <field id="height" type="float" value="210" />
+    </interface>
+
+    <script type="text/brightscript" uri="EventRow.brs" />
+    <script type="text/brightscript" uri="pkg:/source/utils.brs" />
+    <script type="text/brightscript" uri="pkg:/source/config.brs" />
+
+    <children>
+        <Label
+            id="rowLabel"
+            translation="[0, 0]"
+            font="font:SmallBoldSystemFont"
+            color="#FFFFFF"
+        />
+        <LayoutGroup
+            id="cardRow"
+            layoutDirection="horiz"
+            translation="[0, 30]"
+            itemSpacings="[12]"
+        />
+    </children>
+</component>

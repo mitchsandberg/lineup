@@ -20,7 +20,7 @@ sub Init()
 
     m.tabButtons.ObserveField("buttonSelected", "onTabSelected")
     m.sportFilter.ObserveField("itemSelected", "onSportSelected")
-    m.eventRowList.ObserveField("rowItemSelected", "onEventSelected")
+    m.eventRowList.ObserveField("itemSelected", "onEventSelected")
     m.serviceCheckList.ObserveField("checkedState", "onServicesChanged")
 
     m.fetchTask = m.top.FindNode("fetchTask")
@@ -144,8 +144,10 @@ sub displayBySport(events as Object)
 
     bySport = {}
     for each evt in events
-        sport = evt.sport
-        if sport = invalid or sport = "" then sport = "other"
+        sport = "other"
+        if evt.HasField("sport") and evt.sport <> invalid and evt.sport <> ""
+            sport = evt.sport
+        end if
         if not bySport.DoesExist(sport) then bySport[sport] = []
         bySport[sport].Push(evt)
     end for
@@ -157,7 +159,9 @@ sub displayBySport(events as Object)
             sportEvents = bySport[sport]
             liveCount = 0
             for each e in sportEvents
-                if e.status = "live" then liveCount = liveCount + 1
+                if e.HasField("status") and e.status = "live"
+                    liveCount = liveCount + 1
+                end if
             end for
 
             label = sportLabels[sport]
@@ -170,22 +174,7 @@ sub displayBySport(events as Object)
             row.title = label
 
             for each evt in sportEvents
-                card = row.CreateChild("EventCardNode")
-                card.eventId = evt.eventId
-                card.title = evt.title
-                card.sport = evt.sport
-                card.league = evt.league
-                card.channel = evt.channel
-                card.startTime = evt.startTime
-                card.status = evt.status
-                card.homeTeam = evt.homeTeam
-                card.awayTeam = evt.awayTeam
-                card.homeScore = evt.homeScore
-                card.awayScore = evt.awayScore
-
-                if evt.availableServices <> invalid
-                    card.availableServices = evt.availableServices
-                end if
+                addEventCardToRow(row, evt)
             end for
         end if
     end for
@@ -199,7 +188,11 @@ sub displayByTime(events as Object)
     upcomingEvents = []
 
     for each evt in events
-        if evt.status = "live"
+        status = "upcoming"
+        if evt.HasField("status") and evt.status <> invalid
+            status = evt.status
+        end if
+        if status = "live"
             liveEvents.Push(evt)
         else
             upcomingEvents.Push(evt)
@@ -212,7 +205,7 @@ sub displayByTime(events as Object)
         liveRow = rowContent.CreateChild("ContentNode")
         liveRow.title = "Live Now (" + liveEvents.Count().ToStr() + ")"
         for each evt in liveEvents
-            addEventCard(liveRow, evt)
+            addEventCardToRow(liveRow, evt)
         end for
     end if
 
@@ -220,7 +213,7 @@ sub displayByTime(events as Object)
         upRow = rowContent.CreateChild("ContentNode")
         upRow.title = "Upcoming (" + upcomingEvents.Count().ToStr() + ")"
         for each evt in upcomingEvents
-            addEventCard(upRow, evt)
+            addEventCardToRow(upRow, evt)
         end for
     end if
 
@@ -228,21 +221,29 @@ sub displayByTime(events as Object)
     m.emptyLabel.visible = (rowContent.GetChildCount() = 0)
 end sub
 
-sub addEventCard(parentRow as Object, evt as Object)
-    card = parentRow.CreateChild("EventCardNode")
-    card.eventId = evt.eventId
-    card.title = evt.title
-    card.sport = evt.sport
-    card.league = evt.league
-    card.channel = evt.channel
-    card.startTime = evt.startTime
-    card.status = evt.status
-    card.homeTeam = evt.homeTeam
-    card.awayTeam = evt.awayTeam
-    card.homeScore = evt.homeScore
-    card.awayScore = evt.awayScore
-    if evt.availableServices <> invalid
-        card.availableServices = evt.availableServices
+sub addEventCardToRow(parentRow as Object, evt as Object)
+    card = parentRow.CreateChild("ContentNode")
+
+    safeFields = {}
+    if evt.HasField("eventId") then safeFields["eventId"] = evt.eventId
+    if evt.HasField("sport") then safeFields["sport"] = evt.sport
+    if evt.HasField("league") then safeFields["league"] = evt.league
+    if evt.HasField("channel") then safeFields["channel"] = evt.channel
+    if evt.HasField("startTime") then safeFields["startTime"] = evt.startTime
+    if evt.HasField("status") then safeFields["status"] = evt.status
+    if evt.HasField("homeTeam") then safeFields["homeTeam"] = evt.homeTeam
+    if evt.HasField("awayTeam") then safeFields["awayTeam"] = evt.awayTeam
+    if evt.HasField("homeScore") then safeFields["homeScore"] = evt.homeScore
+    if evt.HasField("awayScore") then safeFields["awayScore"] = evt.awayScore
+
+    card.AddFields(safeFields)
+
+    if evt.HasField("title") and evt.title <> invalid
+        card.title = evt.title
+    end if
+
+    if evt.HasField("availableServices") and evt.availableServices <> invalid
+        card.AddFields({ availableServices: evt.availableServices })
     end if
 end sub
 
@@ -269,24 +270,27 @@ sub onSportSelected()
 end sub
 
 sub onEventSelected()
-    rowIdx = m.eventRowList.rowItemSelected[0]
-    colIdx = m.eventRowList.rowItemSelected[1]
-
+    idx = m.eventRowList.itemSelected
     rowContent = m.eventRowList.content
     if rowContent = invalid then return
 
-    row = rowContent.GetChild(rowIdx)
+    row = rowContent.GetChild(idx)
     if row = invalid then return
 
-    card = row.GetChild(colIdx)
-    if card = invalid then return
+    if row.GetChildCount() > 0
+        card = row.GetChild(0)
+        if card = invalid then return
 
-    services = card.availableServices
-    if services <> invalid and services.Count() > 0
-        svcId = services[0]
-        svc = GetServiceById(svcId)
-        if svc <> invalid
-            LaunchChannel(svc.rokuChannelId, "")
+        services = invalid
+        if card.HasField("availableServices")
+            services = card.availableServices
+        end if
+        if services <> invalid and services.Count() > 0
+            svcId = services[0]
+            svc = GetServiceById(svcId)
+            if svc <> invalid
+                LaunchChannel(svc.rokuChannelId, "")
+            end if
         end if
     end if
 end sub

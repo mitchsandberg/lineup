@@ -74,22 +74,16 @@
             </LayoutGroup>
 
             <!-- Events area -->
-            <RowList
+            <MarkupList
                 id="eventRowList"
                 translation="[60, 190]"
-                itemSize="[1160, 220]"
+                itemSize="[1160, 210]"
                 numRows="3"
-                rowItemSize="[[300, 200]]"
-                rowItemSpacing="[[16, 0]]"
-                itemSpacing="[0, 16]"
-                showRowLabel="[true]"
-                showRowCounter="[true]"
-                rowLabelColor="#FFFFFF"
-                rowLabelFont="font:MediumBoldSystemFont"
-                focusBitmapBlendColor="#252D3D"
+                itemSpacing="[0, 8]"
                 drawFocusFeedback="true"
                 vertFocusAnimationStyle="floatingFocus"
-                rowItemComponent="EventCard"
+                focusBitmapBlendColor="#252D3D"
+                itemComponentName="EventRow"
             />
 
             <!-- Loading indicator -->
