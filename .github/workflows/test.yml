@@ -197,9 +197,17 @@ jobs:
       - name: Build Expo web
         run: npx expo export --platform web
 
+      - name: Create Pages project (if needed)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create lineup-guide --production-branch=main
+        continue-on-error: true
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy tv-guide-app/dist --project-name=lineup-guide
+          command: pages deploy tv-guide-app/dist --project-name=lineup-guide --commit-dirty=true --branch=main
