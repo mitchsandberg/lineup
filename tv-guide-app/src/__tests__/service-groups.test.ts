@@ -94,7 +94,7 @@ describe('league service deep links', () => {
     expect(ticket).toBeDefined();
     expect(ticket.deepLinks.tvos).toContain('youtube');
     expect(ticket.deepLinks.android).toContain('youtube.unplugged');
-    expect(ticket.deepLinks.web).toContain('nflsundayticket');
+    expect(ticket.deepLinks.web).toContain('tv.youtube.com');
   });
 });
 
