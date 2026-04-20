@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { InMemoryCache } from './cache';
 import { getServicesForChannel } from './channel-mapping';
 import { fetchAllEvents, NormalizedEvent } from './sports-api';
@@ -7,7 +8,44 @@ import { fetchAllEvents, NormalizedEvent } from './sports-api';
 export const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'http://localhost:19006',
+  'http://localhost:3000',
+  'https://lineup-guide.netlify.app',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
+}));
+
+app.set('trust proxy', 1);
+
+const apiLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+app.use('/api/', apiLimiter);
+
+const API_KEY = process.env.LINEUP_API_KEY;
+if (API_KEY) {
+  app.use('/api/', (req, res, next) => {
+    const provided = req.headers['x-api-key'];
+    if (provided === API_KEY) return next();
+    res.status(401).json({ error: 'Invalid or missing API key.' });
+  });
+}
+
 app.use(express.json());
 
 type EnrichedEvent = NormalizedEvent & { availableServices: string[] };

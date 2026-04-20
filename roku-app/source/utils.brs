@@ -2,6 +2,10 @@ function GetApiBaseUrl() as String
     return "https://lineup-api-31li.onrender.com"
 end function
 
+function GetApiKey() as String
+    return ""
+end function
+
 function FormatEventTime(isoTimestamp as String) as String
     if isoTimestamp = "" or isoTimestamp = invalid then return ""
 

@@ -12,6 +12,8 @@ sub fetchEvents()
         request.SetCertificatesFile("common:/certs/ca-bundle.crt")
         request.AddHeader("Content-Type", "application/json")
         request.AddHeader("User-Agent", "Lineup/1.0")
+        apiKey = GetApiKey()
+        if apiKey <> "" then request.AddHeader("x-api-key", apiKey)
         request.InitClientCertificates()
 
         port = CreateObject("roMessagePort")

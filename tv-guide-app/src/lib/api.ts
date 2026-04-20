@@ -48,9 +48,14 @@ function toSportEvent(event: APIEvent): SportEvent {
   };
 }
 
+const API_KEY = process.env.EXPO_PUBLIC_LINEUP_API_KEY ?? '';
+
 export async function fetchEvents(): Promise<SportEvent[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/events`);
+    const headers: Record<string, string> = {};
+    if (API_KEY) headers['x-api-key'] = API_KEY;
+
+    const res = await fetch(`${API_BASE}/api/events`, { headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return (data.events as APIEvent[]).map(toSportEvent);
