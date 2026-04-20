@@ -45,6 +45,7 @@ function ServiceOption({
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <Pressable
+        testID={`service-option-${service.id}`}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onPress={onPress}
@@ -87,7 +88,7 @@ export function ServicePickerModal({
       onRequestClose={onClose}
     >
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <View style={styles.sheet}>
+        <View testID="service-picker-modal" style={styles.sheet}>
           <Text style={styles.title}>Available on</Text>
           <Text style={styles.subtitle} numberOfLines={1}>{title}</Text>
 
@@ -102,6 +103,7 @@ export function ServicePickerModal({
           </View>
 
           <Pressable
+            testID="service-picker-cancel"
             onPress={onClose}
             style={({ focused }) => [
               styles.cancelBtn,

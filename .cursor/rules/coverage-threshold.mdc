@@ -1,0 +1,68 @@
+---
+description: Enforce minimum test coverage thresholds before merging
+globs: tv-guide-app/jest.config.ts,tv-guide-app/server/jest.config.ts,tv-guide-app/package.json,tv-guide-app/server/package.json
+alwaysApply: false
+---
+
+# Coverage Threshold Enforcement
+
+## Current Thresholds
+
+### App (global)
+| Metric | Minimum | Actual |
+|---|---|---|
+| Lines | 99% | 100% |
+| Statements | 99% | 99.52% |
+| Functions | 100% | 100% |
+| Branches | 94% | 95.41% |
+
+### Server (global)
+| Metric | Minimum | Actual |
+|---|---|---|
+| Lines | 99% | 99.06% |
+| Statements | 98% | 98.80% |
+| Functions | 94% | 94.73% |
+| Branches | 97% | 98.38% |
+
+### Known Uncoverable Lines
+- **App `api.ts` L9**: `__DEV__` ternary — build-time constant, always `true` in tests
+- **App `api.ts` L147-156**: Short-circuit evaluation branches in sort comparisons
+- **App `use-preferences.ts` L20, L48**: `??` fallback branches for AsyncStorage/localStorage
+- **Server `index.ts` L127-128**: `app.listen` guard — intentionally skipped in test env
+
+### Coverage Exclusions
+- `.web.ts` files are excluded from app coverage (platform-specific alternate implementations)
+- `.tsx` files are excluded (require a renderer; cannot be instrumented in `testEnvironment: 'node'`)
+
+If coverage drops below these thresholds, `jest --coverage` exits non-zero.
+
+## Running Coverage
+
+```bash
+# App coverage
+cd tv-guide-app && npm run test:coverage
+
+# Server coverage
+cd tv-guide-app/server && npm run test:coverage
+```
+
+## Before Every PR
+
+1. Run `npm run test:coverage` in both `tv-guide-app/` and `tv-guide-app/server/`.
+2. Fix any threshold violations before pushing.
+3. Coverage HTML reports are written to `coverage/` (gitignored).
+
+## Ongoing Assessment
+
+Use the `coverage-check` skill for a full gap analysis. It will:
+- Run both suites with coverage
+- Parse per-file results
+- Identify and categorize gaps
+- Recommend which tests to add for the biggest coverage lift
+
+## Adding New Code
+
+- New exported functions need unit tests to maintain coverage.
+- New routes need integration tests.
+- Prefer testing through the public API over reaching into internals.
+- See the `test-coverage` rule for what to test per change type.

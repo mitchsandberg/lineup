@@ -164,7 +164,7 @@ function normalizeESPNEvent(event: ESPNEvent, config: { league: string; sport: s
   };
 }
 
-function getDateStrings(): string[] {
+export function getDateStrings(): string[] {
   const now = new Date();
   const yesterday = new Date(now.getTime() - 86_400_000)
     .toISOString()

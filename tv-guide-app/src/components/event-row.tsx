@@ -26,9 +26,9 @@ export function EventRow({ label, events, userServices, sizes, onShowServicePick
   }), [sizes]);
 
   return (
-    <View style={styles.container}>
+    <View testID={`event-row-${label.toLowerCase().replace(/\s+/g, '-')}`} style={styles.container}>
       <View style={[styles.labelRow, dynamicStyles.labelRow]}>
-        <Text style={[styles.label, dynamicStyles.label]}>{label}</Text>
+        <Text testID="event-row-label" style={[styles.label, dynamicStyles.label]}>{label}</Text>
         {liveCount > 0 && (
           <View style={styles.liveBadge}>
             <Text style={styles.liveBadgeText}>

@@ -106,7 +106,7 @@ export function EventCard({ event, userServices, sizes, onPress, onShowServicePi
   }), [sizes]);
 
   return (
-    <Animated.View style={[dynamicStyles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View testID={`event-card-${event.id}`} style={[dynamicStyles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
       <Pressable
         ref={pressableRef}
         onFocus={handleFocus}

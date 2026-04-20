@@ -26,7 +26,7 @@ export function SportFilter({ selected, onSelect, sizes }: SportFilterProps) {
   }), [sizes]);
 
   return (
-    <View style={dynamicStyles.container}>
+    <View testID="sport-filter" style={dynamicStyles.container}>
       <FlatList
         horizontal
         data={SPORT_FILTERS}
@@ -84,6 +84,7 @@ function FilterChip({
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <Pressable
+        testID={`sport-filter-${label.toLowerCase().replace(/\s+/g, '-')}`}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onPress={onPress}

@@ -1,0 +1,50 @@
+---
+description: Testing standards overview — routes to the correct tier-specific standards
+globs: tv-guide-app/**/__tests__/**/*.test.ts,tv-guide-app/**/__tests__/**/*.test.tsx,tv-guide-app/e2e/**/*.spec.ts
+alwaysApply: false
+---
+
+# Testing Standards
+
+Lineup uses three tiers of tests. Each has its own standards document.
+
+| Tier | Purpose | Location | Standards |
+|------|---------|----------|-----------|
+| **Unit** | Single function/module in isolation | `src/__tests__/`, `server/__tests__/` | `unit-testing-standards` rule |
+| **Integration** | Modules working together (routes + middleware) | `server/__tests__/integration/` | `integration-testing-standards` rule |
+| **E2E** | Full user flows in a real browser | `e2e/` | `e2e-testing-standards` rule |
+
+## Choosing the Right Tier
+
+- Testing a pure function? → **Unit test**
+- Testing an API route with middleware? → **Integration test**
+- Testing what a user sees and does? → **E2E test**
+
+## Shared Conventions
+
+- `describe`/`it` blocks with descriptive names. `it` starts with a verb.
+- Factory helpers (e.g. `makeEvent()`) for test data — no inline object literals repeated across tests.
+- Deterministic data — no `new Date()` without fake timers, no `Math.random()`.
+- Never mock the function under test.
+- Never weaken assertions to make tests pass (see `self-healing-tests` rule).
+
+## Running Tests
+
+```bash
+# Unit + integration (app)
+cd tv-guide-app && npx jest --no-coverage
+
+# Unit + integration (server)
+cd tv-guide-app/server && npx jest --no-coverage
+
+# E2E
+cd tv-guide-app && npx playwright test
+```
+
+## CI
+
+All tests run automatically on push to `main` and on pull requests (see `.github/workflows/test.yml`). The workflow has separate jobs for app unit, server unit, server integration, E2E, and coverage thresholds — each visible as its own check in GitHub.
+
+- If CI fails but tests pass locally, check for non-determinism: `new Date()` without mocking, OS-specific paths, or timing-dependent assertions.
+- Never merge with red CI. Fix the tests or the code first.
+- Never add `[skip ci]` to commit messages to bypass test failures.

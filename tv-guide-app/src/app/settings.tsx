@@ -7,7 +7,7 @@ export default function SettingsScreen() {
   const { prefs, toggleService } = usePreferences();
 
   return (
-    <View style={styles.container}>
+    <View testID="settings-screen" style={styles.container}>
       <ServiceSelector
         selectedServices={prefs.selectedServices}
         onToggle={toggleService}

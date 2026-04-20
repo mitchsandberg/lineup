@@ -1,0 +1,96 @@
+---
+description: Standards for integration tests — verify modules work together through real middleware and routes
+globs: tv-guide-app/server/__tests__/integration/**/*.test.ts
+alwaysApply: false
+---
+
+# Integration Testing Standards
+
+Integration tests verify that modules work together correctly — real Express routes, real middleware chain, but mocked external services.
+
+## Location
+
+- `server/__tests__/integration/<name>.test.ts`
+- Group by feature: `events-api.test.ts`, `rate-limiting.test.ts`, `auth.test.ts`
+
+## Setup
+
+Use supertest against the real Express app:
+
+```typescript
+import request from 'supertest';
+import { app } from '../../index';
+
+describe('GET /api/events', () => {
+  it('returns 200 with an array of events', async () => {
+    const res = await request(app)
+      .get('/api/events')
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+});
+```
+
+## What is Real vs Mocked
+
+| Layer | Real or Mocked |
+|-------|---------------|
+| Express app, router, middleware | **Real** |
+| Rate limiting | **Real** |
+| API key validation | **Real** |
+| Cache module | **Real** (test cache behavior) |
+| ESPN/SportsDB API calls | **Mocked** (never hit real external APIs) |
+| Response serialization | **Real** |
+
+## Mock External APIs at the HTTP Level
+
+Mock `fetch` or the sports-api functions, not Express internals:
+
+```typescript
+jest.spyOn(sportsApi, 'fetchAllEvents').mockResolvedValue([
+  makeEvent({ sport: 'basketball', league: 'NBA' }),
+  makeEvent({ id: 'test-2', sport: 'football', league: 'NFL' }),
+]);
+```
+
+## Key Scenarios to Cover
+
+### Route behavior
+- Successful requests return correct status code and JSON shape
+- Unknown routes return 404
+- Server errors return 500 with `{ error: string }` shape
+
+### Middleware chain
+- Rate limiting: Nth+1 request within window returns 429
+- API key: missing key returns 401 when enforcement is on
+- API key: valid key passes through
+- CORS headers are present on responses
+
+### Cache behavior
+- First request fetches from upstream, second returns cached
+- Cache expiry triggers fresh fetch
+- Upstream failure returns stale cache (if applicable)
+
+### Response shape
+- Validate the full shape of `/api/events` response, not just status code
+- Each event has required fields: `id`, `title`, `sport`, `league`, `status`, `startTime`
+- Service/channel arrays are present
+
+## Assertions
+
+- Always assert status code: `.expect(200)`, `.expect(429)`, `.expect(401)`
+- Assert response body shape with `toMatchObject` or `toEqual`
+- Assert headers when relevant: `expect(res.headers['content-type']).toMatch(/json/)`
+- For error responses: `expect(res.body).toEqual({ error: expect.any(String) })`
+
+## Timeouts
+
+- Set reasonable timeouts for async operations: `jest.setTimeout(10_000)` at file level
+- If a test needs more than 10s, something is wrong with the setup
+
+## Isolation
+
+- Reset rate limit state between tests if testing rate limiting
+- Clear cache between tests to avoid pollution
+- Each test file should be runnable independently

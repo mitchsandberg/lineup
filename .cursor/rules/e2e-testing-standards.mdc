@@ -1,0 +1,174 @@
+---
+description: Standards for E2E tests — browser-based user flow tests with Playwright
+globs: tv-guide-app/e2e/**/*.spec.ts
+alwaysApply: false
+---
+
+# E2E Testing Standards
+
+E2E tests verify complete user flows in a real browser. They test what users actually see and do.
+
+## Location
+
+- `tv-guide-app/e2e/<flow>.spec.ts`
+- Group by user flow: `onboarding.spec.ts`, `guide-navigation.spec.ts`, `settings.spec.ts`
+
+## Runner
+
+Playwright targeting the web build (`npx playwright test`).
+
+## Selectors — Always Use `data-testid`
+
+**Every interactive or assertable element must have a `data-testid` attribute.** Never select by class name, tag name, or text content alone.
+
+```tsx
+// In component code
+<Pressable data-testid="sport-filter-nba" onPress={...}>
+  <Text>NBA</Text>
+</Pressable>
+
+<View data-testid="event-card-123">
+  <Text data-testid="event-card-123-home-team">Lakers</Text>
+  <Text data-testid="event-card-123-score">108</Text>
+</View>
+```
+
+```typescript
+// In test code
+await page.getByTestId('sport-filter-nba').click();
+await expect(page.getByTestId('event-card-123-home-team')).toHaveText('Lakers');
+```
+
+### `data-testid` Naming Convention
+
+- Kebab-case: `event-card`, `sport-filter-nba`, `service-picker-modal`
+- Hierarchical: `<parent>-<child>` for nested elements
+- Include dynamic IDs when needed: `event-card-${event.id}`
+- Prefix by component: `onboarding-get-started`, `settings-service-youtube-tv`
+
+### When to Add `data-testid`
+
+Add to any element that an E2E test might need to:
+- **Click:** buttons, links, filter pills, service toggles
+- **Assert text:** team names, scores, times, section headers
+- **Assert visibility:** modals, empty states, loading indicators
+- **Assert count:** event cards in a section, services in a list
+
+## Test Structure
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Guide Navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('http://localhost:8081');
+    // Complete onboarding if needed
+  });
+
+  test('filters events when sport pill is tapped', async ({ page }) => {
+    await page.getByTestId('sport-filter-nba').click();
+    await expect(page.getByTestId('section-header')).toContainText('NBA');
+    await expect(page.getByTestId('event-card').first()).toBeVisible();
+  });
+});
+```
+
+## Key Principles
+
+### Test user behavior, not implementation
+- Click what a user would click
+- Assert what a user would see
+- Don't assert internal state, Redux stores, or network requests
+
+### Each test is independent
+- Never depend on another test running first
+- Use `beforeEach` to set up a clean state
+- Complete onboarding programmatically if the test doesn't test onboarding
+
+### Wait for the app, don't use arbitrary sleeps
+- Use Playwright auto-waiting (built into actions like `click`, `toBeVisible`)
+- Use `waitForSelector` or `waitForResponse` for dynamic content
+- **Never use `page.waitForTimeout()`** — it's fragile and slow. Instead:
+  - Wait for a specific element: `await expect(locator).toBeVisible({ timeout: 10_000 })`
+  - Wait for navigation: `await page.waitForURL('**/guide')`
+  - Wait for network: `await page.waitForResponse('**/api/events')`
+  - Wait for loading to finish: `await expect(page.getByTestId('loading')).not.toBeVisible()`
+
+### Handle async data loading
+- Wait for the loading state to resolve before asserting
+- Use `await expect(locator).toBeVisible({ timeout: 10_000 })` for API-dependent content
+- For content that depends on a live API, assert that either events OR an empty state appears — never assert a specific event title from production data
+
+## Page Object Pattern (optional but recommended)
+
+For complex flows, extract page interactions:
+
+```typescript
+class GuidePage {
+  constructor(private page: Page) {}
+
+  async filterBySport(sport: string) {
+    await this.page.getByTestId(`sport-filter-${sport}`).click();
+  }
+
+  async getEventCards() {
+    return this.page.getByTestId(/^event-card-/).all();
+  }
+
+  async expectSectionVisible(name: string) {
+    await expect(this.page.getByTestId(`section-${name}`)).toBeVisible();
+  }
+}
+```
+
+## What to Cover
+
+### Onboarding flow
+- Welcome screen renders
+- Service picker allows selection/deselection
+- Completing onboarding navigates to guide
+
+### Guide screen
+- Events load and display
+- Sport filter pills change displayed events
+- Time sections appear (Live Now, Starting Soon, Later Today, Tomorrow)
+- Event cards show team names, time, and service badges
+
+### Settings
+- Service toggles persist
+- Toggling a service updates the guide
+
+### Service picker modal
+- Opens when an event has multiple services
+- Shows correct service options
+- Closes on cancel
+
+## Assertions
+
+- `toBeVisible()` — element is in the DOM and visible
+- `toHaveText('exact')` — exact text match
+- `toContainText('partial')` — contains substring
+- `toHaveCount(n)` — number of matching elements
+- Never assert on CSS classes or computed styles
+
+## False Positive Prevention
+
+- **Never assert only `toBeVisible()` on a container.** If the container always renders (even when empty), the test always passes. Assert on meaningful content inside it.
+- **Never assert on text that comes from `localStorage` setup in `beforeEach`.** That tests your setup, not the app. Assert on behavior that results from the app reading and rendering that data.
+- **Test the negative case too.** If you test "selecting NBA filter shows NBA events," also test "selecting NBA filter hides NFL events" — otherwise the filter might be broken and showing everything.
+- **Avoid `hasEvents || hasEmpty` catch-all assertions.** These pass regardless of what the app shows. Pick one expected state and assert it specifically, or split into separate tests.
+
+## CI Considerations
+
+- Tests run on headless Chromium in Ubuntu — no GPU acceleration, slower than local
+- The Expo web server takes 30-60s to bundle on first request; `playwright.config.ts` has a 120s `webServer.timeout` to accommodate this
+- `retries: 2` in CI catches genuine timing flakes, but if a test needs retries consistently, fix the root cause
+- On failure, the Playwright HTML report is uploaded as a GitHub Actions artifact with screenshots and traces
+
+## Running
+
+```bash
+cd tv-guide-app && npx playwright test           # all E2E tests
+cd tv-guide-app && npx playwright test --ui       # interactive mode
+cd tv-guide-app && npx playwright test <file>     # single file
+```

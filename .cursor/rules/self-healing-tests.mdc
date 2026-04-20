@@ -1,6 +1,6 @@
 ---
 description: Self-healing test policy — fix broken tests without masking real bugs
-globs: tv-guide-app/**/__tests__/**/*.test.ts
+globs: tv-guide-app/**/__tests__/**/*.test.ts,tv-guide-app/e2e/**/*.spec.ts
 alwaysApply: false
 ---
 
@@ -24,7 +24,26 @@ For each failure, classify it:
    - Make the test deterministic (mock time, use fixed data, add retries for async).
    - Never delete a flaky test without replacing it.
 
-## Guardrails against false positives/negatives
+4. **Test is a false positive** — the test passes but doesn't actually test production code.
+   - If the test defines a local copy of a production function instead of importing it, fix the import.
+   - If the test asserts on mock return values it set up itself, rewrite to test real behavior.
+
+## Guardrails against false positives
+
+A false positive is a test that passes even when the code it claims to test is broken.
+
+- **Never define production logic inside a test file.** Always import the real function. If the function is inline in a component, extract it to a module first.
+- **Never assert on values the test itself constructed** without passing them through real code. Example: setting up a mock to return X, then asserting the result is X, without any transformation in between.
+- **Prefer specific matchers over loose ones:**
+  - `toHaveLength(5)` not `toBeGreaterThan(0)`
+  - `toEqual(expected)` not `toBeTruthy()`
+  - `toHaveText('Lakers at Celtics')` not `toContainText('')`
+- **`toBeDefined()` is only acceptable as a guard** before accessing properties. It should never be the sole assertion in a test.
+- **Verify tests can actually fail.** If you suspect a false positive, temporarily break the source code and confirm the test goes red.
+
+## Guardrails against false negatives
+
+A false negative is a test that fails even though the code is correct.
 
 - **Never weaken an assertion** to make it pass (e.g. `.toBeGreaterThan(0)` replacing `.toHaveLength(5)`).
 - **Never delete a failing test** without understanding why it fails.
@@ -32,7 +51,15 @@ For each failure, classify it:
 - **Always re-run the full suite** after fixing any test to confirm no cascade.
 - If a hardcoded count changes (e.g. number of channels/services), verify the new count is correct by checking the actual data, not by just copying the error message value.
 
+## E2E-specific healing
+
+- **Stale selectors:** If a `data-testid` was renamed or removed, update the test selector to match the new component code. Never switch to fragile selectors (class names, nth-child, text content).
+- **Timing flakes:** If a test fails intermittently on CI but passes locally, increase the `timeout` option on the specific assertion, not a global sleep. Never add `waitForTimeout()`.
+- **State leaks:** If a test fails only when run after another test, the `beforeEach` isn't cleaning up properly. Ensure `localStorage.clear()` and cookie clearing happen before every test.
+- **CI environment differences:** CI runs on headless Linux — fonts render differently, animations may be slower. Use `toBeVisible()` with generous timeouts for content that depends on API data or animations.
+
 ## After healing
 
 - Run `npx jest --no-coverage` from both `tv-guide-app/` and `tv-guide-app/server/`.
-- Confirm 0 failures before considering the task done.
+- Run `npx playwright test` from `tv-guide-app/`.
+- Confirm 0 failures across all three before considering the task done.

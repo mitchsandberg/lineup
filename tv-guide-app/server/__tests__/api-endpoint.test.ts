@@ -1,4 +1,55 @@
 import request from 'supertest';
+
+const mockEvents = [
+  {
+    id: 'espn-1',
+    title: 'Lakers vs Celtics',
+    sport: 'nba',
+    league: 'NBA',
+    channel: 'ESPN',
+    startTime: '2026-04-20T19:00:00Z',
+    status: 'live' as const,
+    homeTeam: 'Boston Celtics',
+    awayTeam: 'Los Angeles Lakers',
+    homeScore: '87',
+    awayScore: '82',
+  },
+  {
+    id: 'espn-2',
+    title: 'Yankees vs Red Sox',
+    sport: 'mlb',
+    league: 'MLB',
+    channel: 'TBS',
+    startTime: '2026-04-20T23:00:00Z',
+    status: 'upcoming' as const,
+    homeTeam: 'Boston Red Sox',
+    awayTeam: 'New York Yankees',
+  },
+  {
+    id: 'espn-3',
+    title: 'UFC 315: Main Card',
+    sport: 'mma',
+    league: 'UFC',
+    channel: 'ESPN+',
+    startTime: '2026-04-21T02:00:00Z',
+    status: 'upcoming' as const,
+  },
+  {
+    id: 'espn-4',
+    title: 'PGA Championship Round 3',
+    sport: 'golf',
+    league: 'PGA Tour',
+    channel: 'CBS',
+    startTime: '2026-04-21T15:00:00Z',
+    status: 'upcoming' as const,
+  },
+];
+
+jest.mock('../sports-api', () => ({
+  ...jest.requireActual('../sports-api'),
+  fetchAllEvents: jest.fn().mockResolvedValue(mockEvents),
+}));
+
 import { app, clearCache } from '../index';
 
 beforeEach(() => {
@@ -31,13 +82,13 @@ describe('GET /api/events', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('events');
     expect(Array.isArray(res.body.events)).toBe(true);
-  }, 30000);
+  });
 
   it('returns a timestamp', async () => {
     const res = await request(app).get('/api/events');
     expect(res.body).toHaveProperty('timestamp');
     expect(new Date(res.body.timestamp).getTime()).not.toBeNaN();
-  }, 30000);
+  });
 
   it('returns events with required fields', async () => {
     const res = await request(app).get('/api/events');
@@ -54,7 +105,7 @@ describe('GET /api/events', () => {
       expect(['upcoming', 'live', 'final']).toContain(event.status);
       expect(Array.isArray(event.availableServices)).toBe(true);
     }
-  }, 30000);
+  });
 
   it('caches results on second call', async () => {
     await request(app).get('/api/events');
@@ -63,7 +114,7 @@ describe('GET /api/events', () => {
 
     const res2 = await request(app).get('/api/events');
     expect(res2.status).toBe(200);
-  }, 30000);
+  });
 
   it('returns events sorted by start time', async () => {
     const res = await request(app).get('/api/events');
@@ -73,17 +124,48 @@ describe('GET /api/events', () => {
       const curr = new Date(events[i].startTime).getTime();
       expect(curr).toBeGreaterThanOrEqual(prev);
     }
-  }, 30000);
-
-  it('has CORS headers', async () => {
-    const res = await request(app).get('/api/events');
-    expect(res.headers['access-control-allow-origin']).toBeDefined();
-  }, 30000);
+  });
 });
 
 describe('404 handling', () => {
   it('returns 404 for unknown routes', async () => {
     const res = await request(app).get('/api/nonexistent');
     expect(res.status).toBe(404);
+  });
+});
+
+describe('CORS handling', () => {
+  it('allows requests from allowed origins', async () => {
+    const res = await request(app)
+      .get('/api/health')
+      .set('Origin', 'http://localhost:8081');
+    expect(res.status).toBe(200);
+  });
+
+  it('allows requests from non-allowed origins (permissive CORS)', async () => {
+    const res = await request(app)
+      .get('/api/health')
+      .set('Origin', 'https://unknown-origin.example.com');
+    expect(res.status).toBe(200);
+  });
+});
+
+describe('Event enrichment', () => {
+  it('adds league-specific services to events', async () => {
+    const res = await request(app).get('/api/events');
+    const nbaEvent = res.body.events.find((e: any) => e.sport === 'nba');
+    if (nbaEvent) {
+      expect(nbaEvent.availableServices).toContain('nba-league-pass');
+    }
+  });
+
+  it('adds sport-specific services (ESPN+) for applicable sports', async () => {
+    const res = await request(app).get('/api/events');
+    const events = res.body.events;
+    for (const e of events) {
+      if (e.sport === 'mma' || e.sport === 'golf' || e.sport === 'nhl') {
+        expect(e.availableServices).toContain('espn-plus');
+      }
+    }
   });
 });

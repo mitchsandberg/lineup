@@ -158,6 +158,20 @@ export function groupEventsBySport(events: SportEvent[]): GroupedEvents[] {
     }));
 }
 
+export function filterEvents(
+  events: SportEvent[],
+  selectedSport: SportCategory,
+  selectedServices: string[],
+): SportEvent[] {
+  return events.filter((e) => {
+    const sportMatch = selectedSport === 'all' || e.sport === selectedSport;
+    const serviceMatch =
+      e.availableServices.length === 0 ||
+      e.availableServices.some((s) => selectedServices.includes(s));
+    return sportMatch && serviceMatch;
+  });
+}
+
 function getMockEvents(): SportEvent[] {
   const now = new Date();
   const inOneHour = new Date(now.getTime() + 60 * 60_000);

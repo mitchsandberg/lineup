@@ -10,7 +10,7 @@ import {
 import { EventRow } from '@/components/event-row';
 import { SportFilter } from '@/components/sport-filter';
 import { ServicePickerModal } from '@/components/service-picker-modal';
-import { fetchEvents, groupEventsByTime, groupEventsBySport } from '@/lib/api';
+import { fetchEvents, filterEvents, groupEventsByTime, groupEventsBySport } from '@/lib/api';
 import { GroupedEvents, SportEvent, StreamingService } from '@/lib/types';
 import { usePreferences } from '@/hooks/use-preferences';
 import { useResponsive } from '@/hooks/use-responsive';
@@ -55,13 +55,7 @@ export default function GuideScreen() {
     return () => clearInterval(interval);
   }, [loadEvents]);
 
-  const filteredEvents = events.filter((e) => {
-    const sportMatch = prefs.selectedSport === 'all' || e.sport === prefs.selectedSport;
-    const serviceMatch =
-      e.availableServices.length === 0 ||
-      e.availableServices.some((s) => prefs.selectedServices.includes(s));
-    return sportMatch && serviceMatch;
-  });
+  const filteredEvents = filterEvents(events, prefs.selectedSport, prefs.selectedServices);
 
   const grouped: GroupedEvents[] = prefs.selectedSport === 'all'
     ? groupEventsBySport(filteredEvents)
@@ -101,10 +95,10 @@ export default function GuideScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, dynamicStyles.header]}>
+    <View testID="guide-screen" style={styles.container}>
+      <View testID="guide-header" style={[styles.header, dynamicStyles.header]}>
         <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Lineup</Text>
-        <Text style={[styles.headerSubtitle, dynamicStyles.headerSubtitle]}>
+        <Text testID="guide-date" style={[styles.headerSubtitle, dynamicStyles.headerSubtitle]}>
           {new Date().toLocaleDateString(undefined, {
             weekday: 'long',
             month: 'long',

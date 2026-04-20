@@ -1,0 +1,101 @@
+---
+description: Standards for unit tests — pure function/module tests with no side effects
+globs: tv-guide-app/src/__tests__/**/*.test.ts,tv-guide-app/server/__tests__/*.test.ts
+alwaysApply: false
+---
+
+# Unit Testing Standards
+
+Unit tests verify a single function or module in isolation. They are fast, deterministic, and mock all external dependencies.
+
+## Location
+
+- App: `src/__tests__/<module>.test.ts`
+- Server: `server/__tests__/<module>.test.ts`
+- File mirrors source: `channel-mapping.ts` → `channel-mapping.test.ts`
+
+## Structure
+
+```typescript
+describe('ModuleName', () => {
+  describe('functionName', () => {
+    it('returns expected output for valid input', () => { ... });
+    it('handles empty input gracefully', () => { ... });
+    it('throws for invalid input', () => { ... });
+  });
+});
+```
+
+- One `describe` per exported function
+- `it` descriptions start with a verb: returns, throws, filters, maps, handles
+- One logical behavior per `it` block
+
+## Test Data
+
+Use factory helpers — never construct test objects inline repeatedly:
+
+```typescript
+function makeEvent(overrides: Partial<SportEvent> = {}): SportEvent {
+  return {
+    id: 'test-1',
+    title: 'Team A vs Team B',
+    sport: 'basketball',
+    league: 'NBA',
+    status: 'scheduled',
+    startTime: '2026-04-20T19:00:00Z',
+    channels: ['ESPN'],
+    ...overrides,
+  };
+}
+```
+
+- Use deterministic timestamps, never `new Date()` without fake timers
+- Use realistic but minimal data — only the fields the test cares about
+
+## Mocking
+
+- **External APIs:** `jest.spyOn(module, 'fetch').mockResolvedValue(...)`
+- **Timers:** `jest.useFakeTimers()` for anything time-dependent. Call `jest.useRealTimers()` in `afterEach`.
+- **AsyncStorage:** `jest.mock('@react-native-async-storage/async-storage')`
+- **Platform APIs:** Use the existing `src/__mocks__/react-native.ts` for `Platform`, `Linking`, `Alert`
+- **Never** mock the function under test
+- **Never** mock private/internal functions — test through the public API
+
+### `jest.resetModules()` and mock singletons
+
+When testing code that reads `Platform.OS` or `useWindowDimensions` at call time, `jest.resetModules()` causes the manual mock (`__mocks__/react-native.ts`) to re-evaluate, creating new `jest.fn()` instances. Any `mockReturnValue` set on the old instance is lost. Always re-require `react-native` after `resetModules` and set mocks on the fresh instance:
+
+```typescript
+jest.resetModules();
+const rn = require('react-native');
+rn.Platform.OS = 'android';
+rn.useWindowDimensions.mockReturnValue({ width: 375, height: 800 });
+const { myHook } = require('@/hooks/my-hook');
+```
+
+## Assertions
+
+- Prefer specific matchers over loose ones:
+  - `toEqual(expected)` not `toBeTruthy()`
+  - `toHaveLength(3)` not `toBeGreaterThan(0)`
+  - `toMatchObject({ id: '1' })` for partial shape checks
+- Assert error type and message, not just "it threw"
+- For arrays, assert both length and content when order matters
+
+## What to Cover
+
+For every exported function, test:
+1. **Happy path** — typical valid input → expected output
+2. **Edge cases** — empty arrays, undefined optional fields, boundary values
+3. **Error cases** — invalid input → expected error or fallback
+4. **Data integrity** — IDs are unique, references are valid, no duplicates
+
+## False Positive Prevention
+
+- **Always import the function under test from its real module.** Never copy production logic into a test file. If logic is inline in a component, extract it to a testable module first, then import it in both the component and the test.
+- **If `jest.resetModules()` is used,** re-require the module under test after the reset — the top-level `import` still points to the old cached module.
+- **Sanity-check new tests:** temporarily break the source function and confirm the test actually fails. If it still passes, the test has a false positive.
+
+## Speed Target
+
+Full unit suite should run in under 10 seconds. If a test is slow, it probably needs better mocking.

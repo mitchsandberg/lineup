@@ -12,6 +12,11 @@ npm-debug.*
 *.orig.*
 web-build/
 
+# Test coverage & reports
+coverage/
+test-results/
+playwright-report/
+
 # macOS
 .DS_Store
 

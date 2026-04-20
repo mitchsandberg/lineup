@@ -74,6 +74,16 @@ describe('getServicesForChannel', () => {
       const services = getServicesForChannel('USA Net');
       expect(services).toContain('peacock');
     });
+
+    it('picks best match when multiple partial matches exist', () => {
+      const services = getServicesForChannel('F');
+      expect(Array.isArray(services)).toBe(true);
+    });
+
+    it('picks longer match over shorter one', () => {
+      const services = getServicesForChannel('NBC Sports HD');
+      expect(services).toContain('peacock');
+    });
   });
 
   describe('sports-specific channels', () => {

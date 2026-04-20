@@ -40,7 +40,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
   const isMobile = width < 600;
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="onboarding-welcome">
       <View style={[styles.welcomeContent, isMobile && { paddingHorizontal: 24 }]}>
         <Text style={[styles.logoText, isMobile && { fontSize: 44 }]}>Lineup</Text>
         <Text style={[styles.tagline, isMobile && { fontSize: 18, marginBottom: 32 }]}>Live Sports TV Guide</Text>
@@ -65,6 +65,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
         <Animated.View style={{ transform: [{ scale: btnScale }] }}>
           <Pressable
+            testID="onboarding-get-started"
             onPress={onNext}
             onFocus={() =>
               Animated.spring(btnScale, {
@@ -125,7 +126,7 @@ function ServicePickerStep({
     : styles.screen;
 
   return (
-    <ScrollView style={scrollStyle} contentContainerStyle={[styles.pickerContent, isMobile && { paddingHorizontal: 20, paddingTop: 60 }]} showsVerticalScrollIndicator={false}>
+    <ScrollView testID="onboarding-service-picker" style={scrollStyle} contentContainerStyle={[styles.pickerContent, isMobile && { paddingHorizontal: 20, paddingTop: 60 }]} showsVerticalScrollIndicator={false}>
         <Text style={[styles.stepTitle, isMobile && { fontSize: 26 }]}>Pick your streaming services</Text>
         <Text style={styles.stepSubtitle}>
           Lineup will only show games available on your services. You can change this anytime in Settings.
@@ -166,6 +167,7 @@ function ServicePickerStep({
 
         <Animated.View style={{ transform: [{ scale: btnScale }] }}>
           <Pressable
+            testID="onboarding-complete"
             onPress={onComplete}
             onFocus={() =>
               Animated.spring(btnScale, {
@@ -217,6 +219,7 @@ function ServiceChip({
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <Pressable
+        testID={`onboarding-service-${name.toLowerCase().replace(/\s+/g, '-')}`}
         onPress={onPress}
         onFocus={() =>
           Animated.spring(scaleAnim, {

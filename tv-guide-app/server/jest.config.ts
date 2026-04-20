@@ -9,6 +9,19 @@ const config: Config = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  collectCoverageFrom: [
+    '**/*.ts',
+    '!__tests__/**',
+    '!jest.config.ts',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 97,
+      functions: 94,
+      lines: 99,
+      statements: 98,
+    },
+  },
 };
 
 export default config;

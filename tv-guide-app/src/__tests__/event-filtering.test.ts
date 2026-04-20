@@ -1,4 +1,5 @@
-import { SportEvent, SportCategory } from '@/lib/types';
+import { filterEvents } from '@/lib/api';
+import { SportEvent } from '@/lib/types';
 
 function makeEvent(overrides: Partial<SportEvent> = {}): SportEvent {
   return {
@@ -12,20 +13,6 @@ function makeEvent(overrides: Partial<SportEvent> = {}): SportEvent {
     availableServices: ['youtube-tv', 'hulu-live'],
     ...overrides,
   };
-}
-
-function filterEvents(
-  events: SportEvent[],
-  selectedSport: SportCategory,
-  selectedServices: string[],
-): SportEvent[] {
-  return events.filter((e) => {
-    const sportMatch = selectedSport === 'all' || e.sport === selectedSport;
-    const serviceMatch =
-      e.availableServices.length === 0 ||
-      e.availableServices.some((s) => selectedServices.includes(s));
-    return sportMatch && serviceMatch;
-  });
 }
 
 describe('Event filtering', () => {
