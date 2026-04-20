@@ -14,7 +14,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.mitchsandberg.lineup"
+      "package": "com.sandyberg.lineup"
     },
     "web": {
       "output": "static",
