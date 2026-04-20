@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,12 +18,15 @@ interface ServiceSelectorProps {
 }
 
 export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorProps) {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isMobile = width < 600;
+  const isLandscapeMobile = Platform.OS === 'web' && width > height && height < 500;
+  const isWebMobile = Platform.OS === 'web' && width < 768;
+  const tabBarPadding = isLandscapeMobile ? 8 : isWebMobile ? 80 : 80;
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.container, isMobile && { padding: 20, paddingTop: 60 }]}
+      contentContainerStyle={[styles.container, isMobile && { padding: 20, paddingTop: tabBarPadding }]}
       showsVerticalScrollIndicator={false}
     >
       <Text style={[styles.heading, isMobile && { fontSize: 26 }]}>My Streaming Services</Text>
