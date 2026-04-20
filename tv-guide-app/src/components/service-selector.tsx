@@ -22,11 +22,16 @@ export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorP
   const isMobile = width < 600;
   const isLandscapeMobile = Platform.OS === 'web' && width > height && height < 500;
   const isWebMobile = Platform.OS === 'web' && width < 768;
-  const tabBarPadding = isLandscapeMobile ? 8 : isWebMobile ? 80 : 80;
+  const topPadding = isLandscapeMobile ? 8 : isWebMobile ? 80 : 80;
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.container, isMobile && { padding: 20, paddingTop: tabBarPadding }]}
+      contentContainerStyle={[
+        styles.container,
+        isMobile && { padding: 20 },
+        isLandscapeMobile && { padding: 20 },
+        { paddingTop: topPadding },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       <Text style={[styles.heading, isMobile && { fontSize: 26 }]}>My Streaming Services</Text>
