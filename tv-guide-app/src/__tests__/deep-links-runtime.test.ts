@@ -108,6 +108,75 @@ describe('launchStreamingApp', () => {
   });
 });
 
+describe('launchStreamingApp on mobile web', () => {
+  const originalNavigator = global.navigator;
+  const originalWindow = global.window;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Platform as any).OS = 'web';
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(true);
+    (Linking.openURL as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    Object.defineProperty(global, 'navigator', { value: originalNavigator, writable: true });
+    if (!originalWindow) {
+      delete (global as any).window;
+    }
+  });
+
+  function setMobileUserAgent(ua: string) {
+    Object.defineProperty(global, 'navigator', {
+      value: { userAgent: ua },
+      writable: true,
+    });
+  }
+
+  it('uses window.open on iPhone', async () => {
+    setMobileUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    const mockOpen = jest.fn();
+    (global as any).window = { open: mockOpen };
+
+    const result = await launchStreamingApp('youtube-tv');
+
+    expect(result).toBe(true);
+    expect(mockOpen).toHaveBeenCalledWith(SERVICE_MAP['youtube-tv'].deepLinks.web, '_blank');
+    expect(Linking.openURL).not.toHaveBeenCalled();
+  });
+
+  it('uses window.open on Android', async () => {
+    setMobileUserAgent('Mozilla/5.0 (Linux; Android 14; Pixel 8)');
+    const mockOpen = jest.fn();
+    (global as any).window = { open: mockOpen };
+
+    const result = await launchStreamingApp('peacock');
+
+    expect(result).toBe(true);
+    expect(mockOpen).toHaveBeenCalledWith(SERVICE_MAP['peacock'].deepLinks.web, '_blank');
+    expect(Linking.openURL).not.toHaveBeenCalled();
+  });
+
+  it('uses Linking.openURL on desktop web (not mobile)', async () => {
+    setMobileUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)');
+
+    const result = await launchStreamingApp('youtube-tv');
+
+    expect(result).toBe(true);
+    expect(Linking.openURL).toHaveBeenCalledWith(SERVICE_MAP['youtube-tv'].deepLinks.web);
+  });
+
+  it('returns false when window.open throws on mobile web', async () => {
+    setMobileUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    (global as any).window = {
+      open: jest.fn(() => { throw new Error('blocked'); }),
+    };
+
+    const result = await launchStreamingApp('youtube-tv');
+    expect(result).toBe(false);
+  });
+});
+
 describe('getServiceDisplayInfo', () => {
   it('returns service info for a valid ID', () => {
     const info = getServiceDisplayInfo('youtube-tv');

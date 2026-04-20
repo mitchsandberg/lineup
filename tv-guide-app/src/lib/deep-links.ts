@@ -1,6 +1,12 @@
 import { Linking, Platform } from 'react-native';
 import { SERVICE_MAP } from '@/data/services';
 
+function isMobileWeb(): boolean {
+  if (Platform.OS !== 'web') return false;
+  if (typeof navigator === 'undefined') return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 export async function launchStreamingApp(serviceId: string): Promise<boolean> {
   const service = SERVICE_MAP[serviceId];
   if (!service) return false;
@@ -11,6 +17,11 @@ export async function launchStreamingApp(serviceId: string): Promise<boolean> {
   if (!url) return false;
 
   try {
+    if (isMobileWeb()) {
+      window.open(url, '_blank');
+      return true;
+    }
+
     const canOpen = await Linking.canOpenURL(url);
     if (canOpen) {
       await Linking.openURL(url);
