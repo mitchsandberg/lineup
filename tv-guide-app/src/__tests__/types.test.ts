@@ -6,6 +6,7 @@ import {
   TimeGroup,
   GroupedEvents,
   UserPreferences,
+  TeamInfo,
 } from '@/lib/types';
 
 describe('Type definitions', () => {
@@ -116,17 +117,61 @@ describe('Type definitions', () => {
       const prefs: UserPreferences = {
         selectedServices: ['youtube-tv', 'espn-plus'],
         selectedSport: 'nba',
+        favoriteTeams: ['2', '13'],
+        favoriteSports: ['golf'],
+        onboardingComplete: true,
       };
       expect(prefs.selectedServices).toHaveLength(2);
       expect(prefs.selectedSport).toBe('nba');
+      expect(prefs.favoriteTeams).toHaveLength(2);
+      expect(prefs.favoriteSports).toEqual(['golf']);
     });
 
     it('supports "all" sport selection', () => {
       const prefs: UserPreferences = {
         selectedServices: [],
         selectedSport: 'all',
+        favoriteTeams: [],
+        favoriteSports: [],
+        onboardingComplete: false,
       };
       expect(prefs.selectedSport).toBe('all');
+      expect(prefs.favoriteTeams).toEqual([]);
+      expect(prefs.favoriteSports).toEqual([]);
+    });
+  });
+
+  describe('TeamInfo', () => {
+    it('can create a valid team info object', () => {
+      const team: TeamInfo = {
+        sport: 'nba',
+        league: 'NBA',
+        teamId: '2',
+        teamName: 'Boston Celtics',
+      };
+      expect(team.teamId).toBe('2');
+      expect(team.teamName).toBe('Boston Celtics');
+    });
+  });
+
+  describe('SportEvent with team IDs', () => {
+    it('can include homeTeamId and awayTeamId', () => {
+      const event: SportEvent = {
+        id: 'test-teams',
+        title: 'Lakers at Celtics',
+        sport: 'nba',
+        league: 'NBA',
+        channel: 'ESPN',
+        startTime: new Date().toISOString(),
+        status: 'live',
+        homeTeam: 'Boston Celtics',
+        awayTeam: 'Los Angeles Lakers',
+        homeTeamId: '2',
+        awayTeamId: '13',
+        availableServices: ['youtube-tv'],
+      };
+      expect(event.homeTeamId).toBe('2');
+      expect(event.awayTeamId).toBe('13');
     });
   });
 });

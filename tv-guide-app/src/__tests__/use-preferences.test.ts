@@ -152,6 +152,48 @@ describe('usePreferences', () => {
     expect(result.selectedServices).toEqual(['peacock', 'hulu-live']);
   });
 
+  it('returns default favoriteSports as empty array', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { prefs } = usePreferences();
+    expect(prefs.favoriteSports).toEqual([]);
+  });
+
+  it('toggleFavoriteSport adds a sport when not present', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleFavoriteSport } = usePreferences();
+
+    toggleFavoriteSport('golf');
+
+    expect(mockSetState).toHaveBeenCalled();
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      favoriteTeams: [],
+      favoriteSports: [],
+      onboardingComplete: false,
+    });
+    expect(result.favoriteSports).toContain('golf');
+  });
+
+  it('toggleFavoriteSport removes a sport when already present', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleFavoriteSport } = usePreferences();
+
+    toggleFavoriteSport('golf');
+
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      favoriteTeams: [],
+      favoriteSports: ['golf', 'mma'],
+      onboardingComplete: false,
+    });
+    expect(result.favoriteSports).not.toContain('golf');
+    expect(result.favoriteSports).toContain('mma');
+  });
+
   it('toggleService saves to localStorage on web', async () => {
     const { usePreferences } = require('@/hooks/use-preferences');
     const { toggleService } = usePreferences();
@@ -211,6 +253,78 @@ describe('usePreferences', () => {
         selectedSport: 'all',
       }),
     );
+  });
+
+  it('returns default favoriteTeams as empty array', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { prefs } = usePreferences();
+    expect(prefs.favoriteTeams).toEqual([]);
+  });
+
+  it('toggleTeam adds a team when not present', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleTeam } = usePreferences();
+
+    toggleTeam('42');
+
+    expect(mockSetState).toHaveBeenCalled();
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      favoriteTeams: [],
+      onboardingComplete: false,
+    });
+    expect(result.favoriteTeams).toContain('42');
+  });
+
+  it('toggleTeam removes a team when already present', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleTeam } = usePreferences();
+
+    toggleTeam('42');
+
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      favoriteTeams: ['42', '13'],
+      onboardingComplete: false,
+    });
+    expect(result.favoriteTeams).not.toContain('42');
+    expect(result.favoriteTeams).toContain('13');
+  });
+
+  it('updateTeams replaces the entire teams list', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { updateTeams } = usePreferences();
+
+    updateTeams(['5', '10', '15']);
+
+    expect(mockSetState).toHaveBeenCalled();
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      favoriteTeams: ['42'],
+      onboardingComplete: false,
+    });
+    expect(result.favoriteTeams).toEqual(['5', '10', '15']);
+  });
+
+  it('toggleTeam handles undefined favoriteTeams gracefully', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleTeam } = usePreferences();
+
+    toggleTeam('7');
+
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      onboardingComplete: false,
+    });
+    expect(result.favoriteTeams).toContain('7');
   });
 
   it('loadPreferences handles corrupt JSON gracefully', async () => {

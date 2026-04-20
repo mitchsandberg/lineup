@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,6 +24,7 @@ export default function GuideScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerServices, setPickerServices] = useState<StreamingService[]>([]);
   const [pickerEvent, setPickerEvent] = useState<SportEvent | null>(null);
+  const [showMyTeams, setShowMyTeams] = useState(false);
   const { prefs, setSport, loaded } = usePreferences();
   const sizes = useResponsive();
   const { width, height } = useWindowDimensions();
@@ -59,7 +61,10 @@ export default function GuideScreen() {
     return () => clearInterval(interval);
   }, [loadEvents]);
 
-  const filteredEvents = filterEvents(events, prefs.selectedSport, prefs.selectedServices);
+  const hasFavorites = (prefs.favoriteTeams ?? []).length > 0 || (prefs.favoriteSports ?? []).length > 0;
+  const activeTeamFilter = showMyTeams && hasFavorites ? (prefs.favoriteTeams ?? []) : undefined;
+  const activeSportFilter = showMyTeams && hasFavorites ? (prefs.favoriteSports ?? []) : undefined;
+  const filteredEvents = filterEvents(events, prefs.selectedSport, prefs.selectedServices, activeTeamFilter, activeSportFilter);
 
   const grouped: GroupedEvents[] = prefs.selectedSport === 'all'
     ? groupEventsBySport(filteredEvents)
@@ -116,7 +121,33 @@ export default function GuideScreen() {
   );
 
   const filterBlock = (
-    <SportFilter selected={prefs.selectedSport} onSelect={setSport} sizes={sizes} />
+    <>
+      <SportFilter selected={prefs.selectedSport} onSelect={setSport} sizes={sizes} />
+      {hasFavorites && (
+        <View testID="team-toggle" style={[styles.teamToggleRow, { paddingHorizontal: sizes.rowPadding }]}>
+          <View style={styles.teamToggle}>
+            <Pressable
+              testID="team-toggle-all"
+              onPress={() => setShowMyTeams(false)}
+              style={[styles.teamToggleBtn, !showMyTeams && styles.teamToggleBtnActive, isMobile && styles.teamToggleBtnCompact]}
+            >
+              <Text style={[styles.teamToggleText, !showMyTeams && styles.teamToggleTextActive, isMobile && { fontSize: 12 }]}>
+                All Games
+              </Text>
+            </Pressable>
+            <Pressable
+              testID="team-toggle-my"
+              onPress={() => setShowMyTeams(true)}
+              style={[styles.teamToggleBtn, showMyTeams && styles.teamToggleBtnActive, isMobile && styles.teamToggleBtnCompact]}
+            >
+              <Text style={[styles.teamToggleText, showMyTeams && styles.teamToggleTextActive, isMobile && { fontSize: 12 }]}>
+                My Favorites
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+    </>
   );
 
   const eventContent = grouped.length === 0 ? (
@@ -247,5 +278,36 @@ const styles = StyleSheet.create({
     color: '#8B95A5',
     textAlign: 'center',
     maxWidth: 400,
+  },
+  teamToggleRow: {
+    marginBottom: 8,
+  },
+  teamToggle: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    backgroundColor: '#1A1F2E',
+    borderRadius: 20,
+    padding: 3,
+    marginRight: 20,
+  },
+  teamToggleBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 17,
+  },
+  teamToggleBtnCompact: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  teamToggleBtnActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  teamToggleText: {
+    color: '#8B95A5',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  teamToggleTextActive: {
+    color: '#000000',
   },
 });

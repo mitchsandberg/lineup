@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { SportEvent, GroupedEvents, TimeGroup, SportCategory } from './types';
+import { SportEvent, GroupedEvents, TimeGroup, SportCategory, TeamInfo } from './types';
 import { findChannelByName } from '@/data/channels';
 
 const PRODUCTION_API = 'https://lineup-api-31li.onrender.com';
@@ -19,6 +19,8 @@ interface APIEvent {
   status: 'upcoming' | 'live' | 'final';
   homeTeam?: string;
   awayTeam?: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
   homeScore?: string;
   awayScore?: string;
   thumbnail?: string;
@@ -41,6 +43,8 @@ function toSportEvent(event: APIEvent): SportEvent {
     status: event.status,
     homeTeam: event.homeTeam,
     awayTeam: event.awayTeam,
+    homeTeamId: event.homeTeamId,
+    awayTeamId: event.awayTeamId,
     homeScore: event.homeScore,
     awayScore: event.awayScore,
     thumbnail: event.thumbnail,
@@ -62,6 +66,21 @@ export async function fetchEvents(): Promise<SportEvent[]> {
   } catch (err) {
     console.warn('Failed to fetch from API, using mock data', err);
     return getMockEvents();
+  }
+}
+
+export async function fetchTeams(): Promise<TeamInfo[]> {
+  try {
+    const headers: Record<string, string> = {};
+    if (API_KEY) headers['x-api-key'] = API_KEY;
+
+    const res = await fetch(`${API_BASE}/api/teams`, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.teams as TeamInfo[];
+  } catch (err) {
+    console.warn('Failed to fetch teams', err);
+    return [];
   }
 }
 
@@ -162,13 +181,30 @@ export function filterEvents(
   events: SportEvent[],
   selectedSport: SportCategory,
   selectedServices: string[],
+  favoriteTeams?: string[],
+  favoriteSports?: string[],
 ): SportEvent[] {
+  const hasTeamFilter = favoriteTeams && favoriteTeams.length > 0;
+  const hasSportFilter = favoriteSports && favoriteSports.length > 0;
+  const hasFavoritesFilter = hasTeamFilter || hasSportFilter;
+
   return events.filter((e) => {
     const sportMatch = selectedSport === 'all' || e.sport === selectedSport;
     const serviceMatch =
       e.availableServices.length === 0 ||
       e.availableServices.some((s) => selectedServices.includes(s));
-    return sportMatch && serviceMatch;
+
+    if (!hasFavoritesFilter) {
+      return sportMatch && serviceMatch;
+    }
+
+    const matchesTeam = hasTeamFilter && (
+      favoriteTeams!.includes(e.homeTeamId ?? '') ||
+      favoriteTeams!.includes(e.awayTeamId ?? '')
+    );
+    const matchesSport = hasSportFilter && favoriteSports!.includes(e.sport);
+
+    return sportMatch && serviceMatch && (matchesTeam || matchesSport);
   });
 }
 

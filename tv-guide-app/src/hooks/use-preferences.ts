@@ -7,6 +7,8 @@ const STORAGE_KEY = 'tv-guide-preferences';
 const defaultPreferences: UserPreferences = {
   selectedServices: ['youtube-tv', 'espn-plus', 'peacock', 'hulu-live', 'prime-video', 'paramount-plus', 'apple-tv'],
   selectedSport: 'all',
+  favoriteTeams: [],
+  favoriteSports: [],
   onboardingComplete: false,
 };
 
@@ -56,6 +58,9 @@ interface PreferencesContextValue {
   loaded: boolean;
   updateServices: (services: string[]) => void;
   toggleService: (serviceId: string) => void;
+  toggleTeam: (teamId: string) => void;
+  updateTeams: (teamIds: string[]) => void;
+  toggleFavoriteSport: (sport: string) => void;
   setSport: (sport: SportCategory) => void;
   completeOnboarding: () => void;
 }
@@ -99,6 +104,38 @@ function usePreferencesState(): PreferencesContextValue {
     });
   }, []);
 
+  const toggleTeam = useCallback((teamId: string) => {
+    setPrefs((prev) => {
+      const current = prev.favoriteTeams ?? [];
+      const next = current.includes(teamId)
+        ? current.filter((id) => id !== teamId)
+        : [...current, teamId];
+      const updated = { ...prev, favoriteTeams: next };
+      savePreferences(updated);
+      return updated;
+    });
+  }, []);
+
+  const updateTeams = useCallback((teamIds: string[]) => {
+    setPrefs((prev) => {
+      const updated = { ...prev, favoriteTeams: teamIds };
+      savePreferences(updated);
+      return updated;
+    });
+  }, []);
+
+  const toggleFavoriteSport = useCallback((sport: string) => {
+    setPrefs((prev) => {
+      const current = prev.favoriteSports ?? [];
+      const next = current.includes(sport)
+        ? current.filter((s) => s !== sport)
+        : [...current, sport];
+      const updated = { ...prev, favoriteSports: next };
+      savePreferences(updated);
+      return updated;
+    });
+  }, []);
+
   const completeOnboarding = useCallback(() => {
     setPrefs((prev) => {
       const next = { ...prev, onboardingComplete: true };
@@ -107,7 +144,7 @@ function usePreferencesState(): PreferencesContextValue {
     });
   }, []);
 
-  return { prefs, loaded, updateServices, toggleService, setSport, completeOnboarding };
+  return { prefs, loaded, updateServices, toggleService, toggleTeam, updateTeams, toggleFavoriteSport, setSport, completeOnboarding };
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);

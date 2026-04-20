@@ -11,24 +11,41 @@ import {
 import { useWindowDimensions } from 'react-native';
 import { MAJOR_SERVICES, LEAGUE_SERVICES } from '@/data/services';
 import { getSizesForWidth } from '@/lib/constants';
+import { TeamPicker } from './team-picker';
 
 interface OnboardingProps {
   selectedServices: string[];
   onToggleService: (serviceId: string) => void;
+  selectedTeams: string[];
+  onToggleTeam: (teamId: string) => void;
+  selectedSports: string[];
+  onToggleSport: (sport: string) => void;
   onComplete: () => void;
 }
 
-export function Onboarding({ selectedServices, onToggleService, onComplete }: OnboardingProps) {
+export function Onboarding({ selectedServices, onToggleService, selectedTeams, onToggleTeam, selectedSports, onToggleSport, onComplete }: OnboardingProps) {
   const [step, setStep] = useState(0);
 
   if (step === 0) {
     return <WelcomeStep onNext={() => setStep(1)} />;
   }
 
+  if (step === 1) {
+    return (
+      <ServicePickerStep
+        selectedServices={selectedServices}
+        onToggle={onToggleService}
+        onComplete={() => setStep(2)}
+      />
+    );
+  }
+
   return (
-    <ServicePickerStep
-      selectedServices={selectedServices}
-      onToggle={onToggleService}
+    <TeamPickerStep
+      selectedTeams={selectedTeams}
+      onToggle={onToggleTeam}
+      selectedSports={selectedSports}
+      onToggleSport={onToggleSport}
       onComplete={onComplete}
     />
   );
@@ -190,7 +207,7 @@ function ServicePickerStep({
 
         <Animated.View style={{ transform: [{ scale: btnScale }] }}>
           <Pressable
-            testID="onboarding-complete"
+            testID="onboarding-next-services"
             onPress={onComplete}
             onFocus={() =>
               Animated.spring(btnScale, {
@@ -214,10 +231,105 @@ function ServicePickerStep({
             disabled={selectedServices.length === 0}
           >
             <Text style={styles.ctaText}>
-              {selectedServices.length === 0 ? 'Select at least one' : "Let\u2019s go"}
+              {selectedServices.length === 0 ? 'Select at least one' : 'Next'}
             </Text>
           </Pressable>
         </Animated.View>
+    </ScrollView>
+  );
+}
+
+function TeamPickerStep({
+  selectedTeams,
+  onToggle,
+  selectedSports,
+  onToggleSport,
+  onComplete,
+}: {
+  selectedTeams: string[];
+  onToggle: (teamId: string) => void;
+  selectedSports: string[];
+  onToggleSport: (sport: string) => void;
+  onComplete: () => void;
+}) {
+  const btnScale = useRef(new Animated.Value(1)).current;
+  const { width, height } = useWindowDimensions();
+  const isMobile = width < 600;
+  const isLandscapeMobile = Platform.OS === 'web' && width > height && height < 500;
+  const scrollStyle = Platform.OS === 'web'
+    ? [styles.screen, { height: '100vh' as unknown as number }]
+    : styles.screen;
+
+  const topPadding = isLandscapeMobile ? 16 : isMobile ? 60 : Math.max(80, height * 0.12);
+
+  return (
+    <ScrollView
+      testID="onboarding-team-picker"
+      style={scrollStyle}
+      contentContainerStyle={[
+        styles.pickerContent,
+        { paddingTop: topPadding },
+        isMobile && { paddingHorizontal: 20 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={[styles.stepTitle, isMobile && { fontSize: 26 }]}>Pick your favorites</Text>
+      <Text style={styles.stepSubtitle}>
+        Follow sports and teams to quickly filter the guide. You can skip this and change it anytime in Settings.
+      </Text>
+
+      <View style={{ width: '100%', maxWidth: 700 }}>
+        <TeamPicker
+          selectedTeams={selectedTeams}
+          onToggle={onToggle}
+          selectedSports={selectedSports}
+          onToggleSport={onToggleSport}
+          compact={isMobile}
+        />
+      </View>
+
+      <Text style={styles.selectedCount}>
+        {selectedTeams.length + selectedSports.length} favorite{selectedTeams.length + selectedSports.length !== 1 ? 's' : ''} selected
+      </Text>
+
+      <View style={styles.teamPickerButtons}>
+        <Pressable
+          testID="onboarding-skip-teams"
+          onPress={onComplete}
+          style={styles.skipButton}
+        >
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
+
+        <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+          <Pressable
+            testID="onboarding-complete"
+            onPress={onComplete}
+            onFocus={() =>
+              Animated.spring(btnScale, {
+                toValue: 1.05,
+                useNativeDriver: true,
+                friction: 8,
+              }).start()
+            }
+            onBlur={() =>
+              Animated.spring(btnScale, {
+                toValue: 1,
+                useNativeDriver: true,
+                friction: 8,
+              }).start()
+            }
+            style={({ focused }) => [
+              styles.ctaButton,
+              focused && styles.ctaButtonFocused,
+            ]}
+          >
+            <Text style={styles.ctaText}>
+              {selectedTeams.length + selectedSports.length === 0 ? "Let\u2019s go" : `Done (${selectedTeams.length + selectedSports.length})`}
+            </Text>
+          </Pressable>
+        </Animated.View>
+      </View>
     </ScrollView>
   );
 }
@@ -430,5 +542,20 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  teamPickerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    marginTop: 8,
+  },
+  skipButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 18,
+  },
+  skipText: {
+    color: '#8B95A5',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });

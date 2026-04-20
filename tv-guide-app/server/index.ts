@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import { InMemoryCache } from './cache';
 import { getServicesForChannel } from './channel-mapping';
-import { fetchAllEvents, NormalizedEvent } from './sports-api';
+import { fetchAllEvents, fetchAllTeams, NormalizedEvent } from './sports-api';
 
 export const app = express();
 const PORT = process.env.PORT || 3001;
@@ -112,6 +112,16 @@ app.get('/api/events', async (_req, res) => {
   } catch (err) {
     console.error('[server] Error fetching events:', err);
     res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
+app.get('/api/teams', async (_req, res) => {
+  try {
+    const teams = await fetchAllTeams();
+    res.json({ teams, timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('[server] Error fetching teams:', err);
+    res.status(500).json({ error: 'Failed to fetch teams' });
   }
 });
 

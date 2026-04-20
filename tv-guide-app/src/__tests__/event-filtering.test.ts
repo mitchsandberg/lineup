@@ -100,6 +100,109 @@ describe('Event filtering', () => {
     });
   });
 
+  describe('favoriteTeams filtering', () => {
+    const teamEvents: SportEvent[] = [
+      makeEvent({ id: 'e1', sport: 'nba', homeTeamId: '2', awayTeamId: '13', availableServices: ['youtube-tv'] }),
+      makeEvent({ id: 'e2', sport: 'nba', homeTeamId: '5', awayTeamId: '8', availableServices: ['youtube-tv'] }),
+      makeEvent({ id: 'e3', sport: 'mlb', homeTeamId: '7', awayTeamId: '10', availableServices: ['youtube-tv'] }),
+      makeEvent({ id: 'e4', sport: 'mma', availableServices: ['espn-plus'] }),
+    ];
+
+    it('no favoriteTeams param shows all events', () => {
+      const result = filterEvents(teamEvents, 'all', ['youtube-tv', 'espn-plus']);
+      expect(result).toHaveLength(4);
+    });
+
+    it('empty favoriteTeams array shows all events', () => {
+      const result = filterEvents(teamEvents, 'all', ['youtube-tv', 'espn-plus'], []);
+      expect(result).toHaveLength(4);
+    });
+
+    it('filters to only events matching favorite team IDs', () => {
+      const result = filterEvents(teamEvents, 'all', ['youtube-tv', 'espn-plus'], ['2']);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('e1');
+    });
+
+    it('matches both home and away team IDs', () => {
+      const result = filterEvents(teamEvents, 'all', ['youtube-tv', 'espn-plus'], ['13']);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('e1');
+    });
+
+    it('multiple favorite teams match multiple events', () => {
+      const result = filterEvents(teamEvents, 'all', ['youtube-tv', 'espn-plus'], ['2', '7']);
+      expect(result).toHaveLength(2);
+      const ids = result.map((e) => e.id);
+      expect(ids).toContain('e1');
+      expect(ids).toContain('e3');
+    });
+
+    it('events without team IDs are excluded when favoriteTeams is active', () => {
+      const result = filterEvents(teamEvents, 'all', ['youtube-tv', 'espn-plus'], ['999']);
+      expect(result).toHaveLength(0);
+    });
+
+    it('combines with sport filter', () => {
+      const result = filterEvents(teamEvents, 'nba', ['youtube-tv'], ['2', '5']);
+      expect(result).toHaveLength(2);
+    });
+
+    it('combines sport + team + service filters together', () => {
+      const result = filterEvents(teamEvents, 'nba', ['espn-plus'], ['2']);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('favoriteSports filtering', () => {
+    const mixedEvents: SportEvent[] = [
+      makeEvent({ id: 's1', sport: 'nba', homeTeamId: '2', awayTeamId: '13', availableServices: ['youtube-tv'] }),
+      makeEvent({ id: 's2', sport: 'golf', availableServices: ['espn-plus'] }),
+      makeEvent({ id: 's3', sport: 'mma', availableServices: ['espn-plus'] }),
+      makeEvent({ id: 's4', sport: 'mlb', homeTeamId: '7', awayTeamId: '10', availableServices: ['youtube-tv'] }),
+      makeEvent({ id: 's5', sport: 'tennis', availableServices: ['espn-plus'] }),
+    ];
+    const allServices = ['youtube-tv', 'espn-plus'];
+
+    it('favoriteSports alone filters to matching sports', () => {
+      const result = filterEvents(mixedEvents, 'all', allServices, [], ['golf', 'mma']);
+      expect(result).toHaveLength(2);
+      const ids = result.map((e) => e.id);
+      expect(ids).toContain('s2');
+      expect(ids).toContain('s3');
+    });
+
+    it('favoriteSports + favoriteTeams combines with OR logic', () => {
+      const result = filterEvents(mixedEvents, 'all', allServices, ['2'], ['golf']);
+      expect(result).toHaveLength(2);
+      const ids = result.map((e) => e.id);
+      expect(ids).toContain('s1');
+      expect(ids).toContain('s2');
+    });
+
+    it('empty favoriteSports with empty favoriteTeams shows all events', () => {
+      const result = filterEvents(mixedEvents, 'all', allServices, [], []);
+      expect(result).toHaveLength(5);
+    });
+
+    it('favoriteSports respects sport filter pill', () => {
+      const result = filterEvents(mixedEvents, 'golf', allServices, [], ['golf', 'mma']);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('s2');
+    });
+
+    it('favoriteSports respects service filter', () => {
+      const result = filterEvents(mixedEvents, 'all', ['youtube-tv'], [], ['golf']);
+      expect(result).toHaveLength(0);
+    });
+
+    it('only favoriteSports set (no teams) matches sport events', () => {
+      const result = filterEvents(mixedEvents, 'all', allServices, undefined, ['tennis']);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('s5');
+    });
+  });
+
   describe('edge cases', () => {
     it('handles empty events array', () => {
       expect(filterEvents([], 'all', ['youtube-tv'])).toEqual([]);

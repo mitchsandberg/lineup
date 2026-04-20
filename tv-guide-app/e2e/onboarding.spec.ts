@@ -20,20 +20,46 @@ test.describe('Onboarding flow', () => {
     await expect(page.getByText('Pick your streaming services')).toBeVisible();
   });
 
-  test('can select services and complete onboarding', async ({ page }) => {
+  test('can select services and proceed to team picker', async ({ page }) => {
     await page.getByTestId('onboarding-get-started').click();
     await expect(page.getByTestId('onboarding-service-picker')).toBeVisible();
 
     await page.getByTestId('onboarding-service-youtube-tv').click();
 
+    const nextBtn = page.getByTestId('onboarding-next-services');
+    await expect(nextBtn).toBeEnabled();
+    await nextBtn.click();
+
+    await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Follow your teams')).toBeVisible();
+  });
+
+  test('can skip team picker and complete onboarding', async ({ page }) => {
+    await page.getByTestId('onboarding-get-started').click();
+    await page.getByTestId('onboarding-service-youtube-tv').click();
+    await page.getByTestId('onboarding-next-services').click();
+
+    await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId('onboarding-skip-teams').click();
+    await expect(page.getByTestId('guide-screen')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('can complete onboarding through all steps', async ({ page }) => {
+    await page.getByTestId('onboarding-get-started').click();
+    await page.getByTestId('onboarding-service-youtube-tv').click();
+    await page.getByTestId('onboarding-next-services').click();
+
+    await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
+
     const completeBtn = page.getByTestId('onboarding-complete');
-    await expect(completeBtn).toBeEnabled();
+    await expect(completeBtn).toBeVisible();
     await completeBtn.click();
 
     await expect(page.getByTestId('guide-screen')).toBeVisible({ timeout: 10_000 });
   });
 
-  test('complete button is disabled with no services selected', async ({ page }) => {
+  test('next button is disabled with no services selected', async ({ page }) => {
     await page.getByTestId('onboarding-get-started').click();
     await expect(page.getByTestId('onboarding-service-picker')).toBeVisible();
 
@@ -48,6 +74,6 @@ test.describe('Onboarding flow', () => {
       }
     }
 
-    await expect(page.getByTestId('onboarding-complete')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByTestId('onboarding-next-services')).toHaveAttribute('aria-disabled', 'true');
   });
 });

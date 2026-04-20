@@ -37,7 +37,7 @@ interface ESPNEvent {
   competitions: Array<{
     competitors: Array<{
       homeAway: string;
-      team: { displayName: string; abbreviation: string };
+      team: { id?: string; displayName: string; abbreviation: string };
       score?: string;
     }>;
     broadcasts?: Array<{
@@ -60,6 +60,8 @@ export interface NormalizedEvent {
   status: 'upcoming' | 'live' | 'final';
   homeTeam?: string;
   awayTeam?: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
   homeScore?: string;
   awayScore?: string;
   thumbnail?: string;
@@ -159,6 +161,8 @@ function normalizeESPNEvent(event: ESPNEvent, config: { league: string; sport: s
     status: mapStatus(event.status.type.state),
     homeTeam: home?.team.displayName,
     awayTeam: away?.team.displayName,
+    homeTeamId: home?.team.id,
+    awayTeamId: away?.team.id,
     homeScore: home?.score ?? undefined,
     awayScore: away?.score ?? undefined,
   };
@@ -317,4 +321,64 @@ export async function fetchAllEvents(): Promise<NormalizedEvent[]> {
   ]);
 
   return dedupeAndFilter([...espnEvents, ...sdbEvents]);
+}
+
+// ---------------------------------------------------------------------------
+// ESPN Teams API -- fetches full rosters of teams per league
+// ---------------------------------------------------------------------------
+
+export interface TeamEntry {
+  sport: string;
+  league: string;
+  teamId: string;
+  teamName: string;
+}
+
+interface ESPNTeamResponse {
+  sports?: Array<{
+    leagues?: Array<{
+      teams?: Array<{
+        team: { id: string; displayName: string };
+      }>;
+    }>;
+  }>;
+}
+
+const TEAM_SPORT_CONFIGS = Object.entries(ESPN_SPORTS)
+  .filter(([_key, cfg]) => !['mma', 'golf'].includes(cfg.sport))
+  .map(([key, cfg]) => ({ key, ...cfg }));
+
+const teamsCache = new InMemoryCache<TeamEntry[]>(600_000);
+const TEAMS_CACHE_KEY = 'all-teams';
+
+export async function fetchAllTeams(): Promise<TeamEntry[]> {
+  const cached = teamsCache.get(TEAMS_CACHE_KEY);
+  if (cached) return cached;
+
+  const results: TeamEntry[] = [];
+
+  const fetches = TEAM_SPORT_CONFIGS.map(async (config) => {
+    const url = `${ESPN_BASE}/${config.slug}/teams?limit=200`;
+    const data = await fetchJSON<ESPNTeamResponse>(url);
+    const league = data?.sports?.[0]?.leagues?.[0];
+    if (!league?.teams) return;
+
+    for (const entry of league.teams) {
+      results.push({
+        sport: config.sport,
+        league: config.league,
+        teamId: entry.team.id,
+        teamName: entry.team.displayName,
+      });
+    }
+  });
+
+  await Promise.all(fetches);
+
+  results.sort((a, b) =>
+    a.league.localeCompare(b.league) || a.teamName.localeCompare(b.teamName),
+  );
+
+  teamsCache.set(TEAMS_CACHE_KEY, results);
+  return results;
 }

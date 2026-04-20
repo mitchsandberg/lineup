@@ -41,6 +41,19 @@ cd tv-guide-app/server && npx jest --no-coverage
 cd tv-guide-app && npx playwright test
 ```
 
+## Pre-Push Rule
+
+**Always run unit and server tests before pushing.** No exceptions.
+
+```bash
+cd tv-guide-app && npx jest --no-coverage
+cd tv-guide-app && npx jest --config server/jest.config.ts --no-coverage
+```
+
+**E2E tests**: Only run locally when E2E test files (`e2e/*.spec.ts`) have been added or modified. CI runs them on every push regardless, so they always gate merges. Don't run them just because app code changed -- they're slow and CI covers it.
+
+If any test fails, fix it before pushing. Do not push broken code and rely on CI to catch it.
+
 ## CI
 
 All tests run automatically on push to `main` and on pull requests (see `.github/workflows/test.yml`). The workflow has separate jobs for app unit, server unit, server integration, E2E, and coverage thresholds — each visible as its own check in GitHub.

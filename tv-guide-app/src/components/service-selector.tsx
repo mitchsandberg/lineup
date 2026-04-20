@@ -17,6 +17,38 @@ interface ServiceSelectorProps {
   onToggle: (serviceId: string) => void;
 }
 
+export function ServiceSelectorContent({ selectedServices, onToggle, compact }: ServiceSelectorProps & { compact?: boolean }) {
+  return (
+    <>
+      <View style={[styles.grid, compact && { gap: 12 }]}>
+        {MAJOR_SERVICES.map((service) => (
+          <ServiceToggle
+            key={service.id}
+            name={service.name}
+            color={service.color}
+            isSelected={selectedServices.includes(service.id)}
+            onPress={() => onToggle(service.id)}
+            compact={compact}
+          />
+        ))}
+      </View>
+      <Text style={styles.sectionLabel}>League Packages</Text>
+      <View style={[styles.grid, compact && { gap: 12 }]}>
+        {LEAGUE_SERVICES.map((service) => (
+          <ServiceToggle
+            key={service.id}
+            name={service.name}
+            color={service.color}
+            isSelected={selectedServices.includes(service.id)}
+            onPress={() => onToggle(service.id)}
+            compact={compact}
+          />
+        ))}
+      </View>
+    </>
+  );
+}
+
 export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorProps) {
   const { width, height } = useWindowDimensions();
   const isMobile = width < 600;
@@ -38,31 +70,7 @@ export function ServiceSelector({ selectedServices, onToggle }: ServiceSelectorP
       <Text style={styles.subheading}>
         Select the services you subscribe to. Only events available on your services will be shown.
       </Text>
-      <View style={[styles.grid, isMobile && { gap: 12 }]}>
-        {MAJOR_SERVICES.map((service) => (
-          <ServiceToggle
-            key={service.id}
-            name={service.name}
-            color={service.color}
-            isSelected={selectedServices.includes(service.id)}
-            onPress={() => onToggle(service.id)}
-            compact={isMobile}
-          />
-        ))}
-      </View>
-      <Text style={styles.sectionLabel}>League Packages</Text>
-      <View style={[styles.grid, isMobile && { gap: 12 }]}>
-        {LEAGUE_SERVICES.map((service) => (
-          <ServiceToggle
-            key={service.id}
-            name={service.name}
-            color={service.color}
-            isSelected={selectedServices.includes(service.id)}
-            onPress={() => onToggle(service.id)}
-            compact={isMobile}
-          />
-        ))}
-      </View>
+      <ServiceSelectorContent selectedServices={selectedServices} onToggle={onToggle} compact={isMobile} />
     </ScrollView>
   );
 }

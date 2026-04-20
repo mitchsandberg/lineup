@@ -11,6 +11,8 @@ const mockEvents = [
     status: 'live' as const,
     homeTeam: 'Boston Celtics',
     awayTeam: 'Los Angeles Lakers',
+    homeTeamId: '2',
+    awayTeamId: '13',
     homeScore: '87',
     awayScore: '82',
   },
@@ -24,6 +26,8 @@ const mockEvents = [
     status: 'upcoming' as const,
     homeTeam: 'Boston Red Sox',
     awayTeam: 'New York Yankees',
+    homeTeamId: '7',
+    awayTeamId: '10',
   },
   {
     id: 'espn-3',
@@ -45,9 +49,17 @@ const mockEvents = [
   },
 ];
 
+const mockTeams = [
+  { sport: 'mlb', league: 'MLB', teamId: '7', teamName: 'Boston Red Sox' },
+  { sport: 'mlb', league: 'MLB', teamId: '10', teamName: 'New York Yankees' },
+  { sport: 'nba', league: 'NBA', teamId: '2', teamName: 'Boston Celtics' },
+  { sport: 'nba', league: 'NBA', teamId: '13', teamName: 'Los Angeles Lakers' },
+];
+
 jest.mock('../sports-api', () => ({
   ...jest.requireActual('../sports-api'),
   fetchAllEvents: jest.fn().mockResolvedValue(mockEvents),
+  fetchAllTeams: jest.fn().mockResolvedValue(mockTeams),
 }));
 
 import { app, clearCache } from '../index';
@@ -147,6 +159,42 @@ describe('CORS handling', () => {
       .get('/api/health')
       .set('Origin', 'https://unknown-origin.example.com');
     expect(res.status).toBe(200);
+  });
+});
+
+describe('GET /api/teams', () => {
+  it('returns 200 with teams array', async () => {
+    const res = await request(app).get('/api/teams');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('teams');
+    expect(Array.isArray(res.body.teams)).toBe(true);
+  });
+
+  it('returns a timestamp', async () => {
+    const res = await request(app).get('/api/teams');
+    expect(res.body).toHaveProperty('timestamp');
+    expect(new Date(res.body.timestamp).getTime()).not.toBeNaN();
+  });
+
+  it('extracts teams from events with team IDs', async () => {
+    const res = await request(app).get('/api/teams');
+    const teams = res.body.teams;
+    for (const team of teams) {
+      expect(team).toHaveProperty('sport');
+      expect(team).toHaveProperty('league');
+      expect(team).toHaveProperty('teamId');
+      expect(team).toHaveProperty('teamName');
+    }
+  });
+
+  it('returns teams sorted by league then name', async () => {
+    const res = await request(app).get('/api/teams');
+    const teams = res.body.teams;
+    for (let i = 1; i < teams.length; i++) {
+      const cmp = teams[i - 1].league.localeCompare(teams[i].league)
+        || teams[i - 1].teamName.localeCompare(teams[i].teamName);
+      expect(cmp).toBeLessThanOrEqual(0);
+    }
   });
 });
 

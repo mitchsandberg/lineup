@@ -45,6 +45,8 @@ export interface SportEvent {
   status: 'upcoming' | 'live' | 'final';
   homeTeam?: string;
   awayTeam?: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
   homeScore?: string;
   awayScore?: string;
   thumbnail?: string;
@@ -62,5 +64,14 @@ export interface GroupedEvents {
 export interface UserPreferences {
   selectedServices: string[];
   selectedSport: SportCategory;
+  favoriteTeams: string[];
+  favoriteSports: string[];
   onboardingComplete: boolean;
+}
+
+export interface TeamInfo {
+  sport: string;
+  league: string;
+  teamId: string;
+  teamName: string;
 }
