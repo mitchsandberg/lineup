@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Onboarding flow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.context().clearCookies();
-    await page.evaluate(() => localStorage.clear());
     await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.waitForLoadState('networkidle');
   });
 
   test('shows welcome screen on first visit', async ({ page }) => {
@@ -47,6 +48,6 @@ test.describe('Onboarding flow', () => {
       }
     }
 
-    await expect(page.getByTestId('onboarding-complete')).toBeDisabled();
+    await expect(page.getByTestId('onboarding-complete')).toHaveAttribute('aria-disabled', 'true');
   });
 });
