@@ -175,6 +175,18 @@ describe('launchStreamingApp on mobile web', () => {
     const result = await launchStreamingApp('youtube-tv');
     expect(result).toBe(false);
   });
+
+  it('falls back to Linking.openURL when navigator is undefined', async () => {
+    const savedNavigator = global.navigator;
+    Object.defineProperty(global, 'navigator', { value: undefined, writable: true });
+
+    const result = await launchStreamingApp('youtube-tv');
+
+    expect(result).toBe(true);
+    expect(Linking.openURL).toHaveBeenCalledWith(SERVICE_MAP['youtube-tv'].deepLinks.web);
+
+    Object.defineProperty(global, 'navigator', { value: savedNavigator, writable: true });
+  });
 });
 
 describe('getServiceDisplayInfo', () => {

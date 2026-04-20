@@ -58,22 +58,23 @@ describe('groupEventsByTime', () => {
 
   describe('later today grouping', () => {
     it('groups events later today', () => {
-      const laterToday = new Date();
-      laterToday.setHours(23, 0, 0, 0);
-      // Only works if current time is before 21:30 (so laterToday > now + 90min)
-      if (laterToday.getTime() > now + 90 * ONE_MINUTE) {
-        const events = [
-          makeEvent({
-            id: 'later-1',
-            status: 'upcoming',
-            startTime: laterToday.toISOString(),
-          }),
-        ];
-        const groups = groupEventsByTime(events);
-        const laterGroup = groups.find((g) => g.group === 'later-today');
-        expect(laterGroup).toBeDefined();
-        expect(laterGroup!.label).toBe('Later Today');
-      }
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-04-20T12:00:00'));
+
+      const laterToday = new Date('2026-04-20T20:00:00');
+      const events = [
+        makeEvent({
+          id: 'later-1',
+          status: 'upcoming',
+          startTime: laterToday.toISOString(),
+        }),
+      ];
+      const groups = groupEventsByTime(events);
+      const laterGroup = groups.find((g) => g.group === 'later-today');
+      expect(laterGroup).toBeDefined();
+      expect(laterGroup!.label).toBe('Later Today');
+
+      jest.useRealTimers();
     });
   });
 
