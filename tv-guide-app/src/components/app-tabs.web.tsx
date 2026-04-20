@@ -11,10 +11,32 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
 export default function AppTabs() {
+  const { width, height } = useWindowDimensions();
+  const isLandscapeMobile = width > height && height < 500;
+
+  if (isLandscapeMobile) {
+    return (
+      <Tabs>
+        <TabList asChild>
+          <CustomTabList compact>
+            <TabTrigger name="index" href="/" asChild>
+              <TabButton>Guide</TabButton>
+            </TabTrigger>
+            <TabTrigger name="settings" href="/settings" asChild>
+              <TabButton>Settings</TabButton>
+            </TabTrigger>
+          </CustomTabList>
+        </TabList>
+        <TabSlot style={{ flex: 1 }} />
+      </Tabs>
+    );
+  }
+
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
@@ -53,11 +75,12 @@ export function TabButton({
   );
 }
 
-export function CustomTabList(props: TabListProps) {
+export function CustomTabList(props: TabListProps & { compact?: boolean }) {
+  const { compact, ...rest } = props;
   return (
-    <View {...props} style={styles.tabListContainer}>
-      <View style={styles.innerContainer}>
-        <Text style={styles.brandText}>Lineup</Text>
+    <View {...rest} style={compact ? styles.tabListCompact : styles.tabListContainer}>
+      <View style={compact ? styles.innerCompact : styles.innerContainer}>
+        <Text style={compact ? styles.brandTextCompact : styles.brandText}>Lineup</Text>
         {props.children}
       </View>
     </View>
@@ -73,6 +96,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
+  tabListCompact: {
+    width: '100%',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    backgroundColor: '#0D1117',
+  },
   innerContainer: {
     paddingVertical: 10,
     paddingHorizontal: 24,
@@ -82,11 +114,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1F2E',
     gap: 8,
   },
+  innerCompact: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1F2E',
+    gap: 6,
+  },
   brandText: {
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 18,
     marginRight: 16,
+  },
+  brandTextCompact: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+    marginRight: 8,
   },
   tabButton: {
     paddingVertical: 8,

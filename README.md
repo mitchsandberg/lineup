@@ -46,12 +46,14 @@ Lineup is a TV-first app that shows live and upcoming sports events across your 
 - D-pad / remote navigation with visible focus states
 - User preferences saved locally (no account required)
 - All event times shown in user's local time zone
-- 279 automated tests (frontend + backend)
+- 404 automated tests (204 app unit + 184 server unit/integration + 16 E2E)
+- CI pipeline: all tests must pass before deployment
 
-## Hosting
+## Live
 
-- **Backend API** -- Deployed on [Render](https://render.com) at `https://lineup-api-31li.onrender.com`
-- **Privacy Policy** -- Hosted on GitHub Pages at [sandyberg.github.io/lineup](https://sandyberg.github.io/lineup/)
+- **Web App** -- [lineupguide.tv](https://lineupguide.tv) (Cloudflare Pages)
+- **Backend API** -- [Render](https://render.com) (`lineup-api-31li.onrender.com`)
+- **Privacy Policy** -- [GitHub Pages](https://sandyberg.github.io/lineup/)
 - Production apps use the hosted API; local development falls back to `localhost:3001`
 
 ## Project Structure
@@ -78,7 +80,7 @@ tv-guide/
 │   └── Makefile              Build and deploy
 ├── docs/                   Privacy policy (GitHub Pages)
 ├── render.yaml             Render deployment blueprint
-└── .github/workflows/      GitHub Actions (Pages deployment)
+└── .github/workflows/      CI: tests → deploy (Render + Cloudflare Pages)
 ```
 
 ## Getting Started
@@ -122,12 +124,30 @@ ROKU_IP=192.168.1.X ROKU_PASS=yourpassword make deploy
 ### 3. Run tests
 
 ```bash
-# Frontend tests
+# App unit tests (204 tests)
 cd tv-guide-app && npx jest --no-coverage
 
-# Server tests
-cd tv-guide-app && npx jest --no-coverage --config server/jest.config.ts
+# Server unit + integration tests (184 tests)
+cd tv-guide-app/server && npx jest --no-coverage
+
+# E2E tests (11 tests, requires web server running)
+cd tv-guide-app && npx playwright test
+
+# Coverage reports
+cd tv-guide-app && npx jest --coverage
+cd tv-guide-app/server && npx jest --coverage
 ```
+
+## CI/CD
+
+Pushes to `main` trigger the full pipeline via GitHub Actions:
+
+1. **App unit tests** -- data, API, hooks, coverage thresholds (99%+ lines)
+2. **Server unit tests** -- channel mapping, fetch logic, endpoints
+3. **Server integration tests** -- rate limiting, auth, cache, error handling
+4. **E2E tests** -- Playwright browser tests (onboarding, guide, settings)
+5. **Coverage thresholds** -- enforced globally for app and server
+6. **Deploy** -- only if all above pass: API to Render, web to Cloudflare Pages
 
 ## Data Sources
 
