@@ -165,11 +165,40 @@ jobs:
         run: npx jest --coverage
         working-directory: tv-guide-app/server
 
-  deploy:
-    name: Deploy to Render
+  deploy-api:
+    name: Deploy API to Render
     needs: [app-unit, server-unit, server-integration, e2e, coverage]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render deploy
         run: curl -s "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+  deploy-web:
+    name: Deploy Web to Cloudflare Pages
+    needs: [app-unit, server-unit, server-integration, e2e, coverage]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tv-guide-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tv-guide-app/package-lock.json
+
+      - run: npm ci
+
+      - name: Build Expo web
+        run: npx expo export --platform web
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy tv-guide-app/dist --project-name=lineup-guide
