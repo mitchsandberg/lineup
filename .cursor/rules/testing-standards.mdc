@@ -50,7 +50,13 @@ cd tv-guide-app && npx jest --no-coverage
 cd tv-guide-app && npx jest --config server/jest.config.ts --no-coverage
 ```
 
-**E2E tests**: Only run locally when E2E test files (`e2e/*.spec.ts`) have been added or modified. CI runs them on every push regardless, so they always gate merges. Don't run them just because app code changed -- they're slow and CI covers it.
+**E2E tests**: Run locally before pushing when any of these changed:
+- E2E test files (`e2e/*.spec.ts`)
+- UI components (`src/components/`, `src/app/`)
+- Onboarding or navigation flow logic
+- Anything that affects what users see or interact with
+
+CI runs them on every push too, but catching failures locally avoids broken pushes.
 
 If any test fails, fix it before pushing. Do not push broken code and rely on CI to catch it.
 

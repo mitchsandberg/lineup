@@ -20,7 +20,7 @@ test.describe('Onboarding flow', () => {
     await expect(page.getByText('Pick your streaming services')).toBeVisible();
   });
 
-  test('can select services and proceed to team picker', async ({ page }) => {
+  test('can select services and proceed to market picker', async ({ page }) => {
     await page.getByTestId('onboarding-get-started').click();
     await expect(page.getByTestId('onboarding-service-picker')).toBeVisible();
 
@@ -30,18 +30,21 @@ test.describe('Onboarding flow', () => {
     await expect(nextBtn).toBeEnabled();
     await nextBtn.click();
 
-    await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('Follow your teams')).toBeVisible();
+    await expect(page.getByTestId('onboarding-market-picker')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Select your TV market')).toBeVisible();
   });
 
-  test('can skip team picker and complete onboarding', async ({ page }) => {
+  test('can skip through market and team picker to complete onboarding', async ({ page }) => {
     await page.getByTestId('onboarding-get-started').click();
     await page.getByTestId('onboarding-service-youtube-tv').click();
     await page.getByTestId('onboarding-next-services').click();
 
-    await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('onboarding-market-picker')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('onboarding-skip-market').click();
 
+    await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
     await page.getByTestId('onboarding-skip-teams').click();
+
     await expect(page.getByTestId('guide-screen')).toBeVisible({ timeout: 10_000 });
   });
 
@@ -49,6 +52,9 @@ test.describe('Onboarding flow', () => {
     await page.getByTestId('onboarding-get-started').click();
     await page.getByTestId('onboarding-service-youtube-tv').click();
     await page.getByTestId('onboarding-next-services').click();
+
+    await expect(page.getByTestId('onboarding-market-picker')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('onboarding-next-market').click();
 
     await expect(page.getByTestId('onboarding-team-picker')).toBeVisible({ timeout: 10_000 });
 

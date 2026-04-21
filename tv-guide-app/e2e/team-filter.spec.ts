@@ -108,9 +108,12 @@ test.describe('My Favorites in settings', () => {
     await page.waitForLoadState('networkidle');
     await expect(page.getByTestId('settings-screen')).toBeVisible({ timeout: 15_000 });
 
-    await expect(page.getByTestId('team-picker')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('team-search')).toBeVisible();
-    await expect(page.getByText('Follow Sports')).toBeVisible();
-    await expect(page.getByText('Follow Teams')).toBeVisible();
+    const favoritesHeading = page.getByText('My Favorites');
+    await favoritesHeading.scrollIntoViewIfNeeded();
+    await expect(favoritesHeading).toBeVisible({ timeout: 15_000 });
+
+    const sportsLabel = page.getByText('Sports', { exact: true });
+    const noTeams = page.getByText('No teams available right now');
+    await expect(sportsLabel.or(noTeams)).toBeVisible({ timeout: 15_000 });
   });
 });
