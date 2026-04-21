@@ -41,3 +41,7 @@ roku-app/out/
 
 # Test coverage
 coverage/
+
+# Build artifacts
+*.aab
+*.apk
