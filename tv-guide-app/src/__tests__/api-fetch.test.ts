@@ -167,6 +167,52 @@ describe('fetchTeams', () => {
   });
 });
 
+describe('fetchTeams API key', () => {
+  it('includes API key header when EXPO_PUBLIC_LINEUP_API_KEY is set', async () => {
+    process.env.EXPO_PUBLIC_LINEUP_API_KEY = 'teams-key-456';
+
+    jest.resetModules();
+    const { fetchTeams: freshFetchTeams } = require('@/lib/api');
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ teams: [] }),
+    });
+
+    await freshFetchTeams();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: { 'x-api-key': 'teams-key-456' } }),
+    );
+
+    delete process.env.EXPO_PUBLIC_LINEUP_API_KEY;
+  });
+});
+
+describe('fetchMarkets API key', () => {
+  it('includes API key header when EXPO_PUBLIC_LINEUP_API_KEY is set', async () => {
+    process.env.EXPO_PUBLIC_LINEUP_API_KEY = 'markets-key-789';
+
+    jest.resetModules();
+    const { fetchMarkets: freshFetchMarkets } = require('@/lib/api');
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ markets: [] }),
+    });
+
+    await freshFetchMarkets();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: { 'x-api-key': 'markets-key-789' } }),
+    );
+
+    delete process.env.EXPO_PUBLIC_LINEUP_API_KEY;
+  });
+});
+
 describe('fetchMarkets', () => {
   it('fetches and returns markets array', async () => {
     const mockMarkets = [

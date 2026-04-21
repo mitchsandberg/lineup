@@ -119,4 +119,25 @@ describe('fetchAllTeams', () => {
 
     expect(Array.isArray(teams)).toBe(true);
   });
+
+  it('returns cached teams on second call', async () => {
+    mockTeamResponses['basketball/nba/teams'] = {
+      sports: [{
+        leagues: [{
+          teams: [
+            { team: { id: '2', displayName: 'Boston Celtics' } },
+          ],
+        }],
+      }],
+    };
+
+    const { fetchAllTeams } = require('../sports-api');
+    const first = await fetchAllTeams();
+    expect(first.length).toBeGreaterThanOrEqual(1);
+
+    const callCount = (global.fetch as jest.Mock).mock.calls.length;
+    const second = await fetchAllTeams();
+    expect(second).toEqual(first);
+    expect((global.fetch as jest.Mock).mock.calls.length).toBe(callCount);
+  });
 });

@@ -155,4 +155,21 @@ describe('enrichEventWithRSN', () => {
     expect(event.availableServices).toEqual(original.availableServices);
     expect(event.channel).toBe(original.channel);
   });
+
+  it('merges services from channel mapping when they differ from RSN services', () => {
+    jest.spyOn(require('@/data/channels'), 'findChannelByName').mockReturnValueOnce({
+      id: 'test-rsn',
+      name: 'NESN',
+      serviceIds: ['special-service'],
+    });
+
+    const event = makeEvent({
+      regionalChannels: [{ type: 'home', channel: 'NESN' }],
+      availableServices: ['espn-plus'],
+    });
+    const result = enrichEventWithRSN(event, 'boston');
+    expect(result.availableServices).toContain('special-service');
+    expect(result.availableServices).toContain('espn-plus');
+    expect(result.availableServices).toContain('youtube-tv');
+  });
 });

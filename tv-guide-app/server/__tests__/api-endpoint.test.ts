@@ -198,6 +198,17 @@ describe('GET /api/teams', () => {
   });
 });
 
+describe('GET /api/teams error handling', () => {
+  it('returns 500 when fetchAllTeams throws', async () => {
+    const { fetchAllTeams } = require('../sports-api') as { fetchAllTeams: jest.Mock };
+    fetchAllTeams.mockRejectedValueOnce(new Error('Teams API down'));
+
+    const res = await request(app).get('/api/teams');
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'Failed to fetch teams');
+  });
+});
+
 describe('GET /api/markets', () => {
   it('returns 200 with markets array', async () => {
     const res = await request(app).get('/api/markets');

@@ -152,7 +152,7 @@ function normalizeESPNEvent(event: ESPNEvent, config: { league: string; sport: s
   if (!comp) return null;
 
   const broadcasts = comp.broadcasts?.flatMap((b) => b.names) ?? [];
-  const geoBroadcasts = comp.geoBroadcasts?.map((b) => b.media.shortName) ?? [];
+  const geoBroadcasts = comp.geoBroadcasts?.map((b) => b.media?.shortName).filter(Boolean) ?? [];
   const channel = broadcasts[0] ?? geoBroadcasts[0] ?? '';
 
   const regionalChannels: RegionalBroadcast[] = [];

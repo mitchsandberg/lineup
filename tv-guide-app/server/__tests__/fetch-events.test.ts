@@ -345,6 +345,31 @@ describe('normalizeESPNEvent edge cases', () => {
     expect(evt!.regionalChannels![0].channel).toBe('YES');
   });
 
+  it('skips geoBroadcasts with no media shortName', async () => {
+    const noMediaEvent = {
+      id: '222',
+      name: 'Missing Media',
+      date: '2026-04-20T23:00Z',
+      status: { type: { name: 'STATUS_SCHEDULED', state: 'pre', completed: false } },
+      competitions: [{
+        competitors: [],
+        broadcasts: [{ names: ['ESPN'] }],
+        geoBroadcasts: [
+          { type: { shortName: 'TV' }, market: { type: 'Home' }, media: { shortName: 'YES' } },
+          { type: { shortName: 'TV' }, market: { type: 'Home' }, media: {} },
+          { type: { shortName: 'TV' }, market: { type: 'Away' } },
+        ],
+      }],
+    };
+    global.fetch = makeFetchMock({ events: [noMediaEvent] });
+    const { fetchESPNEvents } = require('../sports-api');
+    const events = await fetchESPNEvents();
+    const evt = events.find((e: NormalizedEvent) => e.id === 'espn-222');
+    expect(evt).toBeDefined();
+    expect(evt!.regionalChannels).toHaveLength(1);
+    expect(evt!.regionalChannels![0].channel).toBe('YES');
+  });
+
   it('sets regionalChannels to undefined when no geoBroadcasts', async () => {
     const noGeoBroadcasts = {
       id: '333',

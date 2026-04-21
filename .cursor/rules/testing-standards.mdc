@@ -31,11 +31,11 @@ Lineup uses three tiers of tests. Each has its own standards document.
 ## Running Tests
 
 ```bash
-# Unit + integration (app)
-cd tv-guide-app && npx jest --no-coverage
+# Unit + integration (app, with coverage)
+cd tv-guide-app && npx jest --coverage
 
-# Unit + integration (server)
-cd tv-guide-app/server && npx jest --no-coverage
+# Unit + integration (server, with coverage)
+cd tv-guide-app && npx jest --config server/jest.config.ts --coverage
 
 # E2E
 cd tv-guide-app && npx playwright test
@@ -43,12 +43,14 @@ cd tv-guide-app && npx playwright test
 
 ## Pre-Push Rule
 
-**Always run unit and server tests before pushing.** No exceptions.
+**Always run unit and server tests with coverage before pushing.** No exceptions.
 
 ```bash
-cd tv-guide-app && npx jest --no-coverage
-cd tv-guide-app && npx jest --config server/jest.config.ts --no-coverage
+cd tv-guide-app && npx jest --coverage
+cd tv-guide-app && npx jest --config server/jest.config.ts --coverage
 ```
+
+Coverage thresholds are enforced in `jest.config.ts`. If coverage drops below the threshold, the test run fails — treat it like a failing test.
 
 **E2E tests**: Run locally before pushing when any of these changed:
 - E2E test files (`e2e/*.spec.ts`)
