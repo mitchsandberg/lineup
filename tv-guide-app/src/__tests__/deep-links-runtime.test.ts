@@ -128,6 +128,40 @@ describe('launchStreamingApp', () => {
     expect(result).toBe(true);
   });
 
+  it('falls back to web on android phone when android deep link is missing', async () => {
+    (Platform as any).OS = 'android';
+    (Platform as any).isTV = false;
+    const testId = 'youtube-tv';
+    const original = SERVICE_MAP[testId];
+    (SERVICE_MAP as any)[testId] = {
+      ...original,
+      deepLinks: { ...original.deepLinks, android: undefined, web: 'https://example.com/fallback' },
+    };
+
+    const result = await launchStreamingApp(testId);
+
+    expect(Linking.openURL).toHaveBeenCalledWith('https://example.com/fallback');
+    expect(result).toBe(true);
+    (SERVICE_MAP as any)[testId] = original;
+  });
+
+  it('falls back to web on iOS TV when tvos deep link is missing', async () => {
+    (Platform as any).OS = 'ios';
+    (Platform as any).isTV = true;
+    const testId = 'youtube-tv';
+    const original = SERVICE_MAP[testId];
+    (SERVICE_MAP as any)[testId] = {
+      ...original,
+      deepLinks: { ...original.deepLinks, tvos: undefined, web: 'https://example.com/tvos-fallback' },
+    };
+
+    const result = await launchStreamingApp(testId);
+
+    expect(Linking.openURL).toHaveBeenCalledWith('https://example.com/tvos-fallback');
+    expect(result).toBe(true);
+    (SERVICE_MAP as any)[testId] = original;
+  });
+
   it('does not fall back to web on TV when canOpenURL is false', async () => {
     (Platform as any).OS = 'ios';
     (Platform as any).isTV = true;
@@ -244,6 +278,25 @@ describe('launchStreamingApp on mobile web', () => {
       SERVICE_MAP['peacock'].deepLinks.android ?? SERVICE_MAP['peacock'].deepLinks.tvos,
       '_blank',
     );
+  });
+
+  it('uses iOS mobile-web fallback when android deep link is missing', async () => {
+    setMobileUserAgent(
+      'Mozilla/5.0 (compatible; BlackBerry 10; Touch) AppleWebKit/537.36',
+    );
+    const mockOpen = jest.fn();
+    (global as any).window = { open: mockOpen };
+    const testId = 'youtube-tv';
+    const original = SERVICE_MAP[testId];
+    (SERVICE_MAP as any)[testId] = {
+      ...original,
+      deepLinks: { ...original.deepLinks, android: undefined, ios: 'youtubetv://' },
+    };
+
+    await launchStreamingApp(testId);
+
+    expect(mockOpen).toHaveBeenCalledWith('youtubetv://', '_blank');
+    (SERVICE_MAP as any)[testId] = original;
   });
 
   it('uses Linking.openURL when mobile web has no window.open', async () => {
