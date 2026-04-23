@@ -131,6 +131,30 @@ describe('dedupeAndFilter', () => {
       expect(result).toHaveLength(2);
     });
 
+    it('keeps two games same teams on same UTC date but different first pitch (series doubleheader / west-coast night)', () => {
+      // Same YYYY-MM-DD in UTC, different first-pitch times; both within dedupe window
+      const a = new Date(NOW + ONE_DAY);
+      a.setUTCHours(1, 45, 0, 0);
+      const b = new Date(NOW + ONE_DAY);
+      b.setUTCHours(19, 45, 0, 0);
+      const events = [
+        makeEvent({
+          id: 'late-night-us',
+          homeTeam: 'San Francisco Giants',
+          awayTeam: 'Los Angeles Dodgers',
+          startTime: a.toISOString(),
+        }),
+        makeEvent({
+          id: 'next-day-day-game',
+          homeTeam: 'San Francisco Giants',
+          awayTeam: 'Los Angeles Dodgers',
+          startTime: b.toISOString(),
+        }),
+      ];
+      const result = dedupeAndFilter(events, NOW);
+      expect(result).toHaveLength(2);
+    });
+
     it('keeps events with different teams on same date', () => {
       const time = new Date(NOW + ONE_HOUR).toISOString();
       const events = [

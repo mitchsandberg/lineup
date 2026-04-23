@@ -102,6 +102,15 @@ describe('fetchESPNEvents', () => {
     const events = await fetchESPNEvents();
     expect(Array.isArray(events)).toBe(true);
   });
+
+  it('keeps a single copy per ESPN event id when scoreboard is hit for multiple dates', async () => {
+    global.fetch = makeFetchMock();
+    const { fetchESPNEvents } = require('../sports-api');
+
+    const events: NormalizedEvent[] = await fetchESPNEvents();
+    const lakers = events.filter((e: NormalizedEvent) => e.id === 'espn-401656789');
+    expect(lakers).toHaveLength(1);
+  });
 });
 
 describe('fetchSportsDBEvents', () => {

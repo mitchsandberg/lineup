@@ -128,6 +128,24 @@ async function fetchJSON<T>(url: string, timeoutMs: number = 10_000): Promise<T 
 }
 
 // ---------------------------------------------------------------------------
+// "Sports day" for API queries — never use raw UTC (Render runs in UTC and would
+// ask ESPN for the wrong YYYYMMDD board vs when fans mean "tonight" in the US).
+// Default follows common US TV sports calendar; override with SPORTS_CALENDAR_TZ
+// (IANA, e.g. America/Los_Angeles).
+// ---------------------------------------------------------------------------
+
+function ymdInTimeZone(d: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .format(d)
+    .replace(/-/g, '');
+}
+
+// ---------------------------------------------------------------------------
 // ESPN API Client
 // ---------------------------------------------------------------------------
 
@@ -198,18 +216,22 @@ function normalizeESPNEvent(event: ESPNEvent, config: { league: string; sport: s
   };
 }
 
-export function getDateStrings(): string[] {
-  const now = new Date();
-  const yesterday = new Date(now.getTime() - 86_400_000)
-    .toISOString()
-    .split('T')[0]
-    .replace(/-/g, '');
-  const today = now.toISOString().split('T')[0].replace(/-/g, '');
-  const tomorrow = new Date(now.getTime() + 86_400_000)
-    .toISOString()
-    .split('T')[0]
-    .replace(/-/g, '');
-  return [yesterday, today, tomorrow];
+function sportsCalendarTimeZone(): string {
+  return process.env.SPORTS_CALENDAR_TZ?.trim() || 'America/Los_Angeles';
+}
+
+/**
+ * YYYYMDD (no separators) for yesterday / today / tomorrow in the sports calendar
+ * zone — not in UTC. Uses civil-day offsets; safe for our scoreboard lookback.
+ */
+export function getDateStrings(now: Date = new Date()): string[] {
+  const timeZone = sportsCalendarTimeZone();
+  const oneDay = 86_400_000;
+  return [
+    ymdInTimeZone(new Date(now.getTime() - oneDay), timeZone),
+    ymdInTimeZone(new Date(now.getTime()), timeZone),
+    ymdInTimeZone(new Date(now.getTime() + oneDay), timeZone),
+  ];
 }
 
 export async function fetchESPNEvents(): Promise<NormalizedEvent[]> {
@@ -230,7 +252,13 @@ export async function fetchESPNEvents(): Promise<NormalizedEvent[]> {
   );
 
   await Promise.all(fetches);
-  return results;
+
+  // Same event often appears on overlapping `dates=` requests; keep one by stable id.
+  const byId = new Map<string, NormalizedEvent>();
+  for (const e of results) {
+    if (!byId.has(e.id)) byId.set(e.id, e);
+  }
+  return [...byId.values()];
 }
 
 // ---------------------------------------------------------------------------
@@ -282,14 +310,15 @@ function normalizeSportsDBEvent(event: SportsDBEvent, channel: string): Normaliz
 }
 
 export async function fetchSportsDBEvents(): Promise<NormalizedEvent[]> {
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
-  const today = new Date().toISOString().split('T')[0];
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split('T')[0];
+  const ymd8 = getDateStrings();
+  const sportsDbDates = ymd8.map(
+    (c) => `${c.slice(0, 4)}-${c.slice(4, 6)}-${c.slice(6, 8)}`,
+  );
 
   const results: NormalizedEvent[] = [];
 
   for (const sportQuery of SPORTSDB_SPORT_QUERIES) {
-    for (const date of [yesterday, today, tomorrow]) {
+    for (const date of sportsDbDates) {
       const url = `${SPORTSDB_BASE}/eventsday.php?d=${date}&s=${encodeURIComponent(sportQuery)}`;
       const data = await fetchJSON<{ events: SportsDBEvent[] | null }>(url);
       if (!data?.events) continue;
@@ -328,9 +357,12 @@ export function dedupeAndFilter(
     if (eventTime > twoDaysFromNow) continue;
 
     const hasTeams = event.homeTeam || event.awayTeam;
+    // Use full startTime, not just the calendar date: primetime in US (e.g. 4/22) can
+    // share the same UTC date as the next afternoon's rematch, and MLB series often
+    // have two real games the same "day" in Zulu.
     const key = hasTeams
-      ? `${event.homeTeam ?? ''}-${event.awayTeam ?? ''}-${event.startTime.split('T')[0]}`.toLowerCase()
-      : `${event.title}-${event.startTime.split('T')[0]}`.toLowerCase();
+      ? `${event.homeTeam ?? ''}-${event.awayTeam ?? ''}-${event.startTime}`.toLowerCase()
+      : `${event.title}-${event.startTime}`.toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
       deduped.push(event);
