@@ -16,6 +16,11 @@
  * inject a Podfile post_install step that reorders the fix phase to the end of
  * the app target (after all [CP] phases) and save the project, so the fix runs
  * last before signing.
+ *
+ * We also remove `ios.icon` (Expo `expo.icon` / iOS icon assets) for EXPO_TV=1.
+ * Keeping it alongside @react-native-tvos/config-tv TVAppIcon led actool to merge
+ * CFBundleIcons with CFBundlePrimaryIcon as a string (ASC 90039). TV icons come
+ * only from the TV brand asset catalog.
  */
 const { withInfoPlist, withXcodeProject, withPodfile } = require('expo/config-plugins');
 
@@ -83,25 +88,31 @@ function addFixPlistBuildPhase(project) {
 if [ "\$SDK_BASENAME" != "appletvos" ] && [ "\$SDK_BASENAME" != "AppleTVOS" ]; then
   exit 0
 fi
-PLIST=""
-if [ -n "\${CODESIGNING_FOLDER_PATH:-}" ] && [ -f "\${CODESIGNING_FOLDER_PATH}/Info.plist" ]; then
-  PLIST="\${CODESIGNING_FOLDER_PATH}/Info.plist"
-elif [ -f "\${BUILT_PRODUCTS_DIR}/\${WRAPPER_NAME}/Info.plist" ]; then
-  PLIST="\${BUILT_PRODUCTS_DIR}/\${WRAPPER_NAME}/Info.plist"
-elif [ -f "\${TARGET_BUILD_DIR}/\${WRAPPER_NAME}/Info.plist" ]; then
-  PLIST="\${TARGET_BUILD_DIR}/\${WRAPPER_NAME}/Info.plist"
-elif [ -n "\${INFOPLIST_PATH:-}" ] && [ -f "\${TARGET_BUILD_DIR}/\${INFOPLIST_PATH}" ]; then
-  PLIST="\${TARGET_BUILD_DIR}/\${INFOPLIST_PATH}"
-fi
-if [ -z "\$PLIST" ] || [ ! -f "\$PLIST" ]; then
-  exit 0
-fi
-if /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" "\$PLIST" >/dev/null 2>&1; then
-  /usr/libexec/PlistBuddy -c "Delete :CFBundleIcons" "\$PLIST" 2>/dev/null || true
-fi
-if ! /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "\$PLIST" >/dev/null 2>&1; then
-  /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string ${iconName}" "\$PLIST" 2>/dev/null || true
-fi
+lineup_tvos_fix_plist() {
+  _pl="\$1"
+  [ -f "\$_pl" ] || return 0
+  if /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" "\$_pl" >/dev/null 2>&1; then
+    /usr/libexec/PlistBuddy -c "Delete :CFBundleIcons" "\$_pl" 2>/dev/null || true
+  fi
+  if ! /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "\$_pl" >/dev/null 2>&1; then
+    /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string ${iconName}" "\$_pl" 2>/dev/null || true
+  fi
+}
+for ROOT in "\${BUILT_PRODUCTS_DIR}" "\${TARGET_BUILD_DIR}" "\${CODESIGNING_FOLDER_PATH}"; do
+  if [ -z "\$ROOT" ] || [ ! -d "\$ROOT" ]; then
+    continue
+  fi
+  find "\$ROOT" -name Info.plist 2>/dev/null | while IFS= read -r PL; do
+    case "\$PL" in
+      *.app/Info.plist) lineup_tvos_fix_plist "\$PL" ;;
+    esac
+  done
+done
+for PLIST in "\${CODESIGNING_FOLDER_PATH}/Info.plist" "\${BUILT_PRODUCTS_DIR}/\${WRAPPER_NAME}/Info.plist" "\${TARGET_BUILD_DIR}/\${WRAPPER_NAME}/Info.plist"; do
+  if [ -n "\$PLIST" ] && [ -f "\$PLIST" ]; then
+    lineup_tvos_fix_plist "\$PLIST"
+  fi
+done
 `;
 
   const { buildPhase } = project.addBuildPhase(
@@ -164,6 +175,10 @@ function withTvOSPodfilePlistFixReorder(podfileContents) {
 }
 
 function withTvOSAppIconPlist(config) {
+  if (process.env.EXPO_TV === '1' && config.ios && config.ios.icon != null) {
+    delete config.ios.icon;
+  }
+
   config = withInfoPlist(config, (config) => {
     const plist = config.modResults;
     const isTv = process.env.EXPO_TV === '1' || isAppleTVPlist(plist);

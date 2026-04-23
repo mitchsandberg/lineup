@@ -5,7 +5,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sandyberg.lineup",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "icon": "./assets/expo.icon",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -40,6 +40,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-tvos-app-icon-plist.js",
       [
         "expo-splash-screen",
         {
@@ -66,7 +67,6 @@
           }
         }
       ],
-      "./plugins/with-tvos-app-icon-plist.js",
       "expo-web-browser"
     ],
     "experiments": {
