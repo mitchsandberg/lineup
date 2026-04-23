@@ -5,7 +5,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sandyberg.lineup",
-      "buildNumber": "18",
+      "buildNumber": "19",
       "icon": "./assets/expo.icon",
       "infoPlist": {
         "CFBundleIconName": "App Icon - Small",
@@ -74,7 +74,7 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "version": "1.1.0",
+    "version": "1.1.1",
     "name": "Lineup",
     "slug": "lineup",
     "scheme": "lineup",
