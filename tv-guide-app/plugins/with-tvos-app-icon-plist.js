@@ -10,8 +10,14 @@
  * @react-native-tvos/config-tv: "App Icon - Small", delete CFBundleIcons in the
  * template plist, and add a Run Script that strips CFBundleIcons from the
  * built .app Info.plist (after actool) so the fix survives archive.
+ *
+ * CocoaPods appends shell phases (e.g. [CP] Embed Pods Frameworks) *after* prebuild
+ * rewrites the xcodeproj, so that script can run *after* our PlistBuddy fix. We
+ * inject a Podfile post_install step that reorders the fix phase to the end of
+ * the app target (after all [CP] phases) and save the project, so the fix runs
+ * last before signing.
  */
-const { withInfoPlist, withXcodeProject } = require('expo/config-plugins');
+const { withInfoPlist, withXcodeProject, withPodfile } = require('expo/config-plugins');
 
 const TV_PRIMARY_ICON_NAME = 'App Icon - Small';
 const XCODE_BUILD_PHASE_NAME = '[lineup] Fix tvOS App Store Info.plist (CFBundleIcons)';
@@ -115,6 +121,48 @@ fi
   }
 }
 
+const PODS_REORDER_MARK = '    # [lineup] Move tvOS plist fix after CocoaPods';
+
+/**
+ * After `pod install`, place our run script *after* all CocoaPods-injected build phases
+ * (see user log: [lineup]… ran, then [CP] Embed Pods Frameworks, then signing).
+ * @param {string} podfileContents
+ * @returns {string}
+ */
+function withTvOSPodfilePlistFixReorder(podfileContents) {
+  if (typeof podfileContents !== 'string' || podfileContents.includes(PODS_REORDER_MARK)) {
+    return podfileContents;
+  }
+  const needle = `    :ccache_enabled => ccache_enabled?(podfile_properties),
+    )`;
+  if (!podfileContents.includes(needle)) {
+    return podfileContents;
+  }
+  const postInstall = `${PODS_REORDER_MARK}
+    begin
+      require 'xcodeproj'
+      app_project = Dir[File.join(__dir__, '*.xcodeproj')].first
+      if app_project
+        p = Xcodeproj::Project.open(app_project)
+        changed = false
+        p.targets.each do |target|
+          next unless target.product_type == 'com.apple.product-type.application'
+          fix = target.build_phases.find { |bp| bp.respond_to?(:name) && bp.name.to_s.include?('Fix tvOS App Store Info.plist') }
+          if fix
+            target.build_phases.delete(fix)
+            target.build_phases << fix
+            changed = true
+          end
+        end
+        p.save if changed
+      end
+    rescue => e
+      Pod::UI.warn('Lineup tvOS: reorder plist fix phase: ' + e.to_s)
+    end
+`;
+  return podfileContents.replace(needle, `${needle}\n${postInstall}`);
+}
+
 function withTvOSAppIconPlist(config) {
   config = withInfoPlist(config, (config) => {
     const plist = config.modResults;
@@ -130,12 +178,20 @@ function withTvOSAppIconPlist(config) {
     return config;
   });
 
-  return withXcodeProject(config, (config) => {
+  config = withXcodeProject(config, (config) => {
     // Only tvOS EAS / local prebuilds set EXPO_TV=1 in eas.json or the shell.
     if (process.env.EXPO_TV !== '1') {
       return config;
     }
     addFixPlistBuildPhase(config.modResults);
+    return config;
+  });
+
+  return withPodfile(config, (config) => {
+    if (process.env.EXPO_TV !== '1' || !config.modResults || typeof config.modResults.contents !== 'string') {
+      return config;
+    }
+    config.modResults.contents = withTvOSPodfilePlistFixReorder(config.modResults.contents);
     return config;
   });
 }
