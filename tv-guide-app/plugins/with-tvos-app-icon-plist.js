@@ -21,8 +21,17 @@
  * Keeping it alongside @react-native-tvos/config-tv TVAppIcon led actool to merge
  * CFBundleIcons with CFBundlePrimaryIcon as a string (ASC 90039). TV icons come
  * only from the TV brand asset catalog.
+ *
+ * This plugin is registered *after* `@react-native-tvos/config-tv` in app.json.
+ * config-tv sets ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS=YES, which
+ * (with Xcode 16 + brand assets) can yield an invalid CFBundleIcons merge.
+ * We set it to NO by patching `project.pbxproj` in the *podfile* mod (prebuild
+ * runs xcodeproj before podfile), so the write happens after the last xcode write.
  */
-const { withInfoPlist, withXcodeProject, withPodfile } = require('expo/config-plugins');
+const fs = require('fs');
+const path = require('path');
+
+const { withInfoPlist, withXcodeProject, withPodfile, IOSConfig } = require('expo/config-plugins');
 
 const TV_PRIMARY_ICON_NAME = 'App Icon - Small';
 const XCODE_BUILD_PHASE_NAME = '[lineup] Fix tvOS App Store Info.plist (CFBundleIcons)';
@@ -59,6 +68,31 @@ function hasBrokenAppIconPlist(plist) {
     return true;
   }
   return false;
+}
+
+/**
+ * The xcodeproj mod (precedence -1) finishes before the podfile mod (0). @react-native-tvos
+ * config-tv still ends up with ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS=YES in the
+ * written pbx; mutating the in-memory project in our withXcodeProject is not always last in
+ * the mod pipeline. Patching the file on disk in the podfile mod guarantees YES→NO.
+ */
+function patchPbxIncludeAllAppIconAssetsToNo(projectRoot) {
+  if (!projectRoot) {
+    return;
+  }
+  const name = IOSConfig.XcodeUtils.getProjectName(projectRoot);
+  const pbxPath = path.join(projectRoot, 'ios', `${name}.xcodeproj`, 'project.pbxproj');
+  if (!fs.existsSync(pbxPath)) {
+    return;
+  }
+  let s = fs.readFileSync(pbxPath, 'utf8');
+  const out = s.replace(
+    /ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;/g,
+    'ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;',
+  );
+  if (out !== s) {
+    fs.writeFileSync(pbxPath, out);
+  }
 }
 
 function hasTvosPlistFixBuildPhase(project) {
@@ -205,6 +239,9 @@ function withTvOSAppIconPlist(config) {
   return withPodfile(config, (config) => {
     if (process.env.EXPO_TV !== '1' || !config.modResults || typeof config.modResults.contents !== 'string') {
       return config;
+    }
+    if (!config.modRequest?.introspect) {
+      patchPbxIncludeAllAppIconAssetsToNo(config.modRequest.projectRoot);
     }
     config.modResults.contents = withTvOSPodfilePlistFixReorder(config.modResults.contents);
     return config;
