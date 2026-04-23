@@ -3,13 +3,13 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { STREAMING_SERVICES } from '@/data/services';
 import { launchStreamingApp, probeStreamingLaunch, type StreamingLaunchProbe } from '@/lib/deep-links';
+import { TVFocusGuideView } from './tv-focus-guide';
 
 /**
  * __DEV__ only. On simulator, third-party TV apps are not installed, so `canOpen` is
@@ -61,7 +61,12 @@ export function DeepLinkDevPanel() {
       {loading && <ActivityIndicator color="#5CAAFF" style={styles.spinner} />}
 
       {probes && (
-        <ScrollView style={styles.list} showsVerticalScrollIndicator>
+        /**
+         * tvOS: "Run probe" is left-aligned, "Try launch" is right-aligned per card, so the
+         * downward focus cone from Run probe misses them. `autoFocus` pulls focus into the
+         * guide and lands on the first Try launch button.
+         */
+        <TVFocusGuideView autoFocus style={styles.list}>
           {probes.map((p) => (
             <View key={p.serviceId} style={styles.card}>
               <View style={styles.cardTop}>
@@ -87,7 +92,7 @@ export function DeepLinkDevPanel() {
               </Text>
             </View>
           ))}
-        </ScrollView>
+        </TVFocusGuideView>
       )}
 
       {lastLaunch && (
@@ -120,7 +125,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   btn: {
-    alignSelf: 'flex-start',
+    // tvOS: keep the hit region wide so pressing DOWN reliably reaches the cards below.
+    alignSelf: Platform.isTV ? 'stretch' : 'flex-start',
+    alignItems: 'center',
     backgroundColor: '#1A1F2E',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -140,7 +147,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   list: {
-    maxHeight: 400,
+    alignSelf: 'stretch',
     marginTop: 12,
   },
   card: {

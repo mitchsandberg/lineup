@@ -76,7 +76,13 @@ export function EventCard({ event, userServices, sizes, onPress, onShowServicePi
     }
 
     const resolved = matchingServices.map((id) => SERVICE_MAP[id]).filter(Boolean);
-    if (resolved.length > 1 && onShowServicePicker) {
+    /**
+     * Always surface the provider sheet when we have any matching service and a picker handler
+     * is wired up. Even with a single provider, we want the user to confirm before we deep-link
+     * into a third-party app — otherwise tapping a card "jumps out" of Lineup unexpectedly.
+     * (The Roku app is its own codebase and does not run this path.)
+     */
+    if (resolved.length >= 1 && onShowServicePicker) {
       onShowServicePicker(resolved, event);
       return;
     }

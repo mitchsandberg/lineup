@@ -1,5 +1,5 @@
 import { Linking, Platform } from 'react-native';
-import { launchStreamingApp, getServiceDisplayInfo } from '@/lib/deep-links';
+import { launchStreamingApp, getServiceDisplayInfo, probeStreamingLaunch } from '@/lib/deep-links';
 import { SERVICE_MAP } from '@/data/services';
 
 beforeEach(() => {
@@ -361,6 +361,167 @@ describe('launchStreamingApp on mobile web', () => {
     expect(Linking.openURL).toHaveBeenCalledWith(SERVICE_MAP['youtube-tv'].deepLinks.web);
 
     Object.defineProperty(global, 'navigator', { value: savedNavigator, writable: true });
+  });
+});
+
+describe('launchStreamingApp fallback catch branches', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(true);
+    (Linking.openURL as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    (Platform as any).OS = 'web';
+    (Platform as any).isTV = false;
+    jest.restoreAllMocks();
+  });
+
+  it('iOS: App Store openURL rejects, falls through to web fallback (covers tryOpenStoreListing iOS catch)', async () => {
+    (Platform as any).OS = 'ios';
+    (Platform as any).isTV = false;
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(false);
+    // App-store openURL rejects; the subsequent web-fallback openURL resolves.
+    (Linking.openURL as jest.Mock)
+      .mockRejectedValueOnce(new Error('store open failed'))
+      .mockResolvedValue(undefined);
+
+    const result = await launchStreamingApp('espn-plus');
+
+    expect(result).toBe(true);
+    expect(Linking.openURL).toHaveBeenNthCalledWith(1, 'https://apps.apple.com/app/id317469184');
+    expect(Linking.openURL).toHaveBeenNthCalledWith(2, SERVICE_MAP['espn-plus'].deepLinks.web);
+  });
+
+  it('Android: intent openURL throws, then Play Store listing opens successfully', async () => {
+    (Platform as any).OS = 'android';
+    (Platform as any).isTV = false;
+    // Canonical canOpen is skipped for intents; openURL throws once, then Play Store opens.
+    (Linking.openURL as jest.Mock)
+      .mockRejectedValueOnce(new Error('no app'))
+      .mockResolvedValue(undefined);
+
+    const result = await launchStreamingApp('hulu-live');
+
+    expect(result).toBe(true);
+    const playStore = `https://play.google.com/store/apps/details?id=${encodeURIComponent(
+      SERVICE_MAP['hulu-live'].playStorePackage!,
+    )}`;
+    expect(Linking.openURL).toHaveBeenNthCalledWith(2, playStore);
+  });
+
+  it('Android: every openURL rejects → Play Store catch + web-fallback catch + final console.warn', async () => {
+    (Platform as any).OS = 'android';
+    (Platform as any).isTV = false;
+    (Linking.openURL as jest.Mock).mockRejectedValue(new Error('blocked'));
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await launchStreamingApp('hulu-live');
+
+    expect(result).toBe(false);
+    // intent → Play Store → web fallback: 3 openURL attempts, all rejected
+    expect(Linking.openURL).toHaveBeenCalledTimes(3);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Failed to launch ${SERVICE_MAP['hulu-live'].name}:`,
+      expect.any(Error),
+    );
+  });
+});
+
+describe('probeStreamingLaunch', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    (Platform as any).OS = 'web';
+    (Platform as any).isTV = false;
+  });
+
+  it('returns null for an unknown service id', async () => {
+    expect(await probeStreamingLaunch('does-not-exist')).toBeNull();
+  });
+
+  it('web platform: canOpen is null (OS probe is skipped), no store fallback flagged', async () => {
+    (Platform as any).OS = 'web';
+    const p = await probeStreamingLaunch('hulu-live');
+    expect(p).not.toBeNull();
+    expect(p!.canOpen).toBeNull();
+    expect(p!.wouldUseStoreFallback).toBe(false);
+  });
+
+  it('iOS + canOpen true: resolves the tvos scheme and the App Store listing URL', async () => {
+    (Platform as any).OS = 'ios';
+    (Platform as any).isTV = false;
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(true);
+
+    const p = await probeStreamingLaunch('espn-plus');
+
+    expect(p).toEqual({
+      serviceId: 'espn-plus',
+      name: 'ESPN+',
+      resolvedUrl: SERVICE_MAP['espn-plus'].deepLinks.tvos,
+      isIntent: false,
+      canOpen: true,
+      storeListingUrl: 'https://apps.apple.com/app/id317469184',
+      wouldUseStoreFallback: false,
+    });
+  });
+
+  it('iOS + canOpen false: wouldUseStoreFallback becomes true when appStoreId exists', async () => {
+    (Platform as any).OS = 'ios';
+    (Platform as any).isTV = false;
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(false);
+
+    const p = await probeStreamingLaunch('peacock');
+
+    expect(p!.canOpen).toBe(false);
+    expect(p!.wouldUseStoreFallback).toBe(true);
+    expect(p!.storeListingUrl).toBe('https://apps.apple.com/app/id1508186374');
+  });
+
+  it('Android intent URLs: isIntent true, canOpen null, store fallback not flagged', async () => {
+    (Platform as any).OS = 'android';
+    (Platform as any).isTV = false;
+
+    const p = await probeStreamingLaunch('hulu-live');
+
+    expect(p!.isIntent).toBe(true);
+    expect(p!.canOpen).toBeNull();
+    expect(p!.wouldUseStoreFallback).toBe(false);
+    // On Android the store listing comes from the Play Store package, not an Apple id.
+    expect(p!.storeListingUrl).toContain('play.google.com/store/apps/details?id=');
+  });
+
+  it('Android TV: resolves the androidTv intent for Prime Video (not the phone intent)', async () => {
+    (Platform as any).OS = 'android';
+    (Platform as any).isTV = true;
+
+    const p = await probeStreamingLaunch('prime-video');
+
+    expect(p!.resolvedUrl).toBe(SERVICE_MAP['prime-video'].deepLinks.androidTv);
+    expect(p!.isIntent).toBe(true);
+    // Android TV: playStorePackageTv should drive storeListingUrl.
+    expect(p!.storeListingUrl).toContain(
+      encodeURIComponent(SERVICE_MAP['prime-video'].playStorePackageTv!),
+    );
+  });
+
+  it('iOS probe without an appStoreId: storeListingUrl is undefined, no store fallback', async () => {
+    (Platform as any).OS = 'ios';
+    (Platform as any).isTV = false;
+    (Linking.canOpenURL as jest.Mock).mockResolvedValue(false);
+
+    const id = 'espn-plus';
+    const original = SERVICE_MAP[id];
+    (SERVICE_MAP as any)[id] = { ...original, appStoreId: undefined };
+
+    const p = await probeStreamingLaunch(id);
+
+    expect(p!.storeListingUrl).toBeUndefined();
+    expect(p!.wouldUseStoreFallback).toBe(false);
+    (SERVICE_MAP as any)[id] = original;
   });
 });
 
