@@ -5,7 +5,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sandyberg.lineup",
-      "buildNumber": "19",
+      "buildNumber": "20",
       "icon": "./assets/expo.icon",
       "infoPlist": {
         "CFBundleIconName": "App Icon - Small",
