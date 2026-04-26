@@ -10,31 +10,35 @@ import {
 } from 'react-native';
 import { TvosTabBar } from '@/constants/theme';
 import { fetchTeams } from '@/lib/api';
+import {
+  normalizeLegacyFavoriteTeamIds,
+  sameFavoriteIdSet,
+} from '@/lib/favorite-team-ids';
 import { TeamInfo } from '@/lib/types';
 import { SPORT_FILTERS } from '@/lib/constants';
 
 interface TeamPickerProps {
   selectedTeams: string[];
   onToggle: (teamId: string) => void;
+  /** When server returns `sport:espnId` and storage still has raw ids, rewrites and persists */
+  onFavoritesMigrated?: (teamIds: string[]) => void;
   selectedSports?: string[];
   onToggleSport?: (sport: string) => void;
   compact?: boolean;
+  preferInitialFocus?: boolean;
 }
 
 const ALL_SPORTS = SPORT_FILTERS.filter((f) => f.id !== 'all');
 
-const LEAGUE_SPORT_MAP: Record<string, string> = {
-  NFL: 'nfl',
-  NBA: 'nba',
-  MLB: 'mlb',
-  NHL: 'nhl',
-  MLS: 'soccer',
-  EPL: 'soccer',
-  NCAAF: 'college-football',
-  NCAAM: 'college-basketball',
-};
-
-export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSport, compact }: TeamPickerProps) {
+export function TeamPicker({
+  selectedTeams,
+  onToggle,
+  onFavoritesMigrated,
+  selectedSports,
+  onToggleSport,
+  compact,
+  preferInitialFocus,
+}: TeamPickerProps) {
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedLeague, setExpandedLeague] = useState<string | null>(null);
@@ -67,6 +71,13 @@ export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSp
     });
   }, []);
 
+  useEffect(() => {
+    if (teams.length === 0 || !onFavoritesMigrated) return;
+    const next = normalizeLegacyFavoriteTeamIds(teams, selectedTeams);
+    if (sameFavoriteIdSet(next, selectedTeams)) return;
+    onFavoritesMigrated(next);
+  }, [teams, selectedTeams, onFavoritesMigrated]);
+
   const isSearching = search.trim().length > 0;
 
   const filteredTeams = useMemo(() => {
@@ -85,15 +96,8 @@ export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSp
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredTeams]);
 
-  const selectedCountByLeague = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const team of teams) {
-      if (selectedTeams.includes(team.teamId)) {
-        counts[team.league] = (counts[team.league] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [teams, selectedTeams]);
+  /** Set lookup avoids subtle `includes` / duplicate-row issues and is O(1) per chip. */
+  const selectedTeamIdSet = useMemo(() => new Set(selectedTeams), [selectedTeams]);
 
   if (loading) {
     return (
@@ -123,13 +127,17 @@ export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSp
           <Text style={[styles.sectionLabel, isCompact && { fontSize: 12 }]}>
             Sports
           </Text>
+          <Text style={[styles.sportsHint, isCompact && { fontSize: 12 }]}>
+            Follow an entire sport (e.g. all Golf or MMA). Or pick teams below.
+          </Text>
           <View style={styles.chipRow}>
-            {ALL_SPORTS.map((sport) => {
+            {ALL_SPORTS.map((sport, index) => {
               const isSelected = (selectedSports ?? []).includes(sport.id);
               return (
                 <Pressable
                   key={sport.id}
                   testID={`sport-fav-${sport.id}`}
+                  hasTVPreferredFocus={Boolean(preferInitialFocus && isTv && index === 0)}
                   onPress={() => onToggleSport(sport.id)}
                   style={({ focused }) => [
                     styles.chip,
@@ -227,7 +235,6 @@ export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSp
 
       {grouped.map(([league, leagueTeams]) => {
         const isExpanded = isSearching || expandedLeague === league;
-        const count = selectedCountByLeague[league] ?? 0;
 
         return (
           <View key={league} style={styles.leagueSection}>
@@ -243,11 +250,6 @@ export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSp
                 {league}
               </Text>
               <View style={styles.leagueHeaderRight}>
-                {count > 0 && (
-                  <View style={styles.countBadge}>
-                    <Text style={styles.countBadgeText}>{count}</Text>
-                  </View>
-                )}
                 <Text style={styles.chevron}>{isExpanded ? '▾' : '▸'}</Text>
               </View>
             </Pressable>
@@ -255,11 +257,11 @@ export function TeamPicker({ selectedTeams, onToggle, selectedSports, onToggleSp
             {isExpanded && (
               <View style={styles.chipRow}>
                 {leagueTeams.map((team) => {
-                  const isSelected = selectedTeams.includes(team.teamId);
+                  const isSelected = selectedTeamIdSet.has(team.teamId);
                   return (
                     <Pressable
                       key={team.teamId}
-                      testID={`team-chip-${team.teamId}`}
+                      testID={`team-chip-${team.teamId.replace(/:/g, '-')}`}
                       onPress={() => onToggle(team.teamId)}
                       style={({ focused }) => [
                         styles.chip,
@@ -316,6 +318,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 8,
+  },
+  sportsHint: {
+    color: '#6B7280',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 10,
   },
   searchInput: {
     backgroundColor: '#1A1F2E',
@@ -388,19 +396,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  countBadge: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    minWidth: 22,
-    alignItems: 'center',
-  },
-  countBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
   },
   chevron: {
     color: '#6B7280',

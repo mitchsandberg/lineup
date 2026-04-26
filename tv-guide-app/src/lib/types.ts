@@ -91,7 +91,7 @@ export interface UserPreferences {
   selectedSport: SportCategory;
   favoriteTeams: string[];
   favoriteSports: string[];
-  tvMarket: string | null;
+  tvMarkets: string[];
   onboardingComplete: boolean;
 }
 
@@ -103,6 +103,7 @@ export interface MarketInfo {
 export interface TeamInfo {
   sport: string;
   league: string;
+  /** `sport:espnTeamId` — ESPN ids are not unique across sports */
   teamId: string;
   teamName: string;
 }

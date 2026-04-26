@@ -98,6 +98,32 @@ describe('fetchEvents', () => {
     expect(events[0].id).toMatch(/^mock-/);
   });
 
+  it('aborts a hanging local events request before using production fallback', async () => {
+    jest.useFakeTimers();
+    const fetchMock = jest.fn((url: string, init?: RequestInit) => {
+      if (url.includes('localhost')) {
+        return new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ events: [] }),
+      });
+    });
+    global.fetch = fetchMock as jest.Mock;
+
+    const pending = fetchEvents();
+    await jest.advanceTimersByTimeAsync(8_000);
+    const events = await pending;
+
+    expect(events).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe('https://lineup-api-31li.onrender.com/api/events');
+
+    jest.useRealTimers();
+  });
+
   it('includes API key header when EXPO_PUBLIC_LINEUP_API_KEY is set', async () => {
     process.env.EXPO_PUBLIC_LINEUP_API_KEY = 'test-key-123';
 
@@ -129,13 +155,36 @@ describe('fetchEvents', () => {
     expect(events[0].homeTeamId).toBe('2');
     expect(events[0].awayTeamId).toBe('13');
   });
+
+  it('fetches directly from production API outside dev', async () => {
+    const originalDev = (global as any).__DEV__;
+    (global as any).__DEV__ = false;
+    jest.resetModules();
+    const { fetchEvents: freshFetchEvents } = require('@/lib/api');
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ events: [] }),
+    });
+
+    const events = await freshFetchEvents();
+
+    expect(events).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://lineup-api-31li.onrender.com/api/events',
+      expect.objectContaining({ headers: {} }),
+    );
+
+    (global as any).__DEV__ = originalDev;
+    jest.resetModules();
+  });
 });
 
 describe('fetchTeams', () => {
   it('fetches and returns teams array', async () => {
     const mockTeams = [
-      { sport: 'nba', league: 'NBA', teamId: '2', teamName: 'Boston Celtics' },
-      { sport: 'nba', league: 'NBA', teamId: '13', teamName: 'Los Angeles Lakers' },
+      { sport: 'nba', league: 'NBA', teamId: 'nba:2', teamName: 'Boston Celtics' },
+      { sport: 'nba', league: 'NBA', teamId: 'nba:13', teamName: 'Los Angeles Lakers' },
     ];
 
     global.fetch = jest.fn().mockResolvedValue({
@@ -145,7 +194,7 @@ describe('fetchTeams', () => {
 
     const teams = await fetchTeams();
     expect(teams).toHaveLength(2);
-    expect(teams[0].teamId).toBe('2');
+    expect(teams[0].teamId).toBe('nba:2');
     expect(teams[0].teamName).toBe('Boston Celtics');
   });
 
@@ -265,5 +314,25 @@ describe('fetchMarkets', () => {
     expect(events[0].regionalChannels).toHaveLength(2);
     expect(events[0].regionalChannels![0].channel).toBe('NESN');
     expect(events[0].regionalChannels![1].channel).toBe('YES');
+  });
+
+  it('returns empty list when production list fetch fails outside dev', async () => {
+    const originalDev = (global as any).__DEV__;
+    (global as any).__DEV__ = false;
+    jest.resetModules();
+    const { fetchMarkets: freshFetchMarkets } = require('@/lib/api');
+
+    global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+    const markets = await freshFetchMarkets();
+
+    expect(markets).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://lineup-api-31li.onrender.com/api/markets',
+      expect.objectContaining({ headers: {} }),
+    );
+
+    (global as any).__DEV__ = originalDev;
+    jest.resetModules();
   });
 });

@@ -18,7 +18,17 @@ const NavyTheme = {
 };
 
 function AppContent() {
-  const { prefs, loaded, toggleService, toggleTeam, toggleFavoriteSport, setTvMarket, completeOnboarding } = usePreferences();
+  const {
+    prefs,
+    loaded,
+    toggleService,
+    toggleTeam,
+    toggleFavoriteSport,
+    toggleTvMarket,
+    clearTvMarkets,
+    completeOnboarding,
+    updateTeams,
+  } = usePreferences();
   const insets = useSafeAreaInsets();
 
   if (loaded && !prefs.onboardingComplete) {
@@ -29,10 +39,12 @@ function AppContent() {
           onToggleService={toggleService}
           selectedTeams={prefs.favoriteTeams ?? []}
           onToggleTeam={toggleTeam}
+          onFavoritesMigrated={updateTeams}
           selectedSports={prefs.favoriteSports ?? []}
           onToggleSport={toggleFavoriteSport}
-          selectedMarket={prefs.tvMarket ?? null}
-          onSelectMarket={setTvMarket}
+          selectedMarkets={prefs.tvMarkets ?? []}
+          onToggleMarket={toggleTvMarket}
+          onClearMarkets={clearTvMarkets}
           onComplete={completeOnboarding}
         />
       </View>

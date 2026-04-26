@@ -8,7 +8,7 @@ function makeEvent(overrides: Partial<SportEvent> = {}): SportEvent {
     sport: 'mlb',
     league: 'MLB',
     channel: 'ESPN',
-    startTime: new Date().toISOString(),
+    startTime: '2026-04-20T19:00:00Z',
     status: 'live',
     homeTeam: 'Boston Red Sox',
     awayTeam: 'New York Yankees',
@@ -18,28 +18,28 @@ function makeEvent(overrides: Partial<SportEvent> = {}): SportEvent {
 }
 
 describe('resolveRSN', () => {
-  it('returns null when marketId is null', () => {
+  it('returns null when markets are empty', () => {
     const event = makeEvent({
       regionalChannels: [{ type: 'home', channel: 'NESN' }],
     });
-    expect(resolveRSN(event, null)).toBeNull();
+    expect(resolveRSN(event, [])).toBeNull();
   });
 
   it('returns null when event has no regionalChannels', () => {
     const event = makeEvent();
-    expect(resolveRSN(event, 'boston')).toBeNull();
+    expect(resolveRSN(event, ['boston'])).toBeNull();
   });
 
   it('returns null when event has empty regionalChannels', () => {
     const event = makeEvent({ regionalChannels: [] });
-    expect(resolveRSN(event, 'boston')).toBeNull();
+    expect(resolveRSN(event, ['boston'])).toBeNull();
   });
 
   it('returns null when market does not match any regional channel', () => {
     const event = makeEvent({
       regionalChannels: [{ type: 'home', channel: 'NESN' }],
     });
-    expect(resolveRSN(event, 'chicago')).toBeNull();
+    expect(resolveRSN(event, ['chicago'])).toBeNull();
   });
 
   it('matches home RSN for Boston market', () => {
@@ -50,7 +50,7 @@ describe('resolveRSN', () => {
         { type: 'away', channel: 'YES' },
       ],
     });
-    const result = resolveRSN(event, 'boston');
+    const result = resolveRSN(event, ['boston']);
     expect(result).not.toBeNull();
     expect(result!.channel).toBe('NESN');
     expect(result!.extraServices).toContain('youtube-tv');
@@ -65,7 +65,7 @@ describe('resolveRSN', () => {
         { type: 'away', channel: 'YES' },
       ],
     });
-    const result = resolveRSN(event, 'new-york');
+    const result = resolveRSN(event, ['new-york']);
     expect(result).not.toBeNull();
     expect(result!.channel).toBe('YES');
   });
@@ -76,14 +76,14 @@ describe('resolveRSN', () => {
         { type: 'national', channel: 'ESPN' },
       ],
     });
-    expect(resolveRSN(event, 'new-york')).toBeNull();
+    expect(resolveRSN(event, ['new-york'])).toBeNull();
   });
 
   it('is case-insensitive on channel names', () => {
     const event = makeEvent({
       regionalChannels: [{ type: 'home', channel: 'nesn' }],
     });
-    const result = resolveRSN(event, 'boston');
+    const result = resolveRSN(event, ['boston']);
     expect(result).not.toBeNull();
     expect(result!.channel).toBe('nesn');
   });
@@ -92,7 +92,7 @@ describe('resolveRSN', () => {
     const event = makeEvent({
       regionalChannels: [{ type: 'home', channel: 'Bally Sports Detroit' }],
     });
-    const result = resolveRSN(event, 'detroit');
+    const result = resolveRSN(event, ['detroit']);
     expect(result).not.toBeNull();
     expect(result!.extraServices).toEqual([]);
   });
@@ -101,14 +101,27 @@ describe('resolveRSN', () => {
     const event = makeEvent({
       regionalChannels: [{ type: 'home', channel: 'NESN' }],
     });
-    expect(resolveRSN(event, 'unknown-market')).toBeNull();
+    expect(resolveRSN(event, ['unknown-market'])).toBeNull();
+  });
+
+  it('matches any selected market', () => {
+    const event = makeEvent({
+      regionalChannels: [
+        { type: 'national', channel: 'ESPN' },
+        { type: 'home', channel: 'NESN' },
+        { type: 'away', channel: 'YES' },
+      ],
+    });
+    const result = resolveRSN(event, ['chicago', 'new-york']);
+    expect(result).not.toBeNull();
+    expect(result!.channel).toBe('YES');
   });
 });
 
 describe('enrichEventWithRSN', () => {
   it('returns event unchanged when no market', () => {
     const event = makeEvent();
-    const result = enrichEventWithRSN(event, null);
+    const result = enrichEventWithRSN(event, []);
     expect(result).toBe(event);
   });
 
@@ -116,7 +129,7 @@ describe('enrichEventWithRSN', () => {
     const event = makeEvent({
       regionalChannels: [{ type: 'home', channel: 'NESN' }],
     });
-    const result = enrichEventWithRSN(event, 'chicago');
+    const result = enrichEventWithRSN(event, ['chicago']);
     expect(result).toBe(event);
   });
 
@@ -128,7 +141,7 @@ describe('enrichEventWithRSN', () => {
       ],
       availableServices: ['espn-plus'],
     });
-    const result = enrichEventWithRSN(event, 'boston');
+    const result = enrichEventWithRSN(event, ['boston']);
     expect(result.channel).toBe('NESN');
     expect(result.availableServices).toContain('espn-plus');
     expect(result.availableServices).toContain('youtube-tv');
@@ -140,7 +153,7 @@ describe('enrichEventWithRSN', () => {
       regionalChannels: [{ type: 'home', channel: 'NESN' }],
       availableServices: ['youtube-tv', 'hulu-live'],
     });
-    const result = enrichEventWithRSN(event, 'boston');
+    const result = enrichEventWithRSN(event, ['boston']);
     const ytCount = result.availableServices.filter((s) => s === 'youtube-tv').length;
     expect(ytCount).toBe(1);
   });
@@ -151,7 +164,7 @@ describe('enrichEventWithRSN', () => {
       availableServices: ['espn-plus'],
     });
     const original = { ...event, availableServices: [...event.availableServices] };
-    enrichEventWithRSN(event, 'boston');
+    enrichEventWithRSN(event, ['boston']);
     expect(event.availableServices).toEqual(original.availableServices);
     expect(event.channel).toBe(original.channel);
   });
@@ -167,8 +180,23 @@ describe('enrichEventWithRSN', () => {
       regionalChannels: [{ type: 'home', channel: 'NESN' }],
       availableServices: ['espn-plus'],
     });
-    const result = enrichEventWithRSN(event, 'boston');
+    const result = enrichEventWithRSN(event, ['boston']);
     expect(result.availableServices).toContain('special-service');
+    expect(result.availableServices).toContain('espn-plus');
+    expect(result.availableServices).toContain('youtube-tv');
+  });
+
+  it('still updates the channel when channel mapping has no entry', () => {
+    jest.spyOn(require('@/data/channels'), 'findChannelByName').mockReturnValueOnce(null);
+
+    const event = makeEvent({
+      regionalChannels: [{ type: 'home', channel: 'NESN' }],
+      availableServices: ['espn-plus'],
+    });
+
+    const result = enrichEventWithRSN(event, ['boston']);
+
+    expect(result.channel).toBe('NESN');
     expect(result.availableServices).toContain('espn-plus');
     expect(result.availableServices).toContain('youtube-tv');
   });

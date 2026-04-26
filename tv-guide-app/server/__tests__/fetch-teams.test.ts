@@ -55,7 +55,7 @@ describe('fetchAllTeams', () => {
     const teams = await fetchAllTeams();
 
     expect(teams.length).toBeGreaterThanOrEqual(2);
-    const celtics = teams.find((t: any) => t.teamId === '2');
+    const celtics = teams.find((t: any) => t.teamId === 'nba:2');
     expect(celtics).toBeDefined();
     expect(celtics.teamName).toBe('Boston Celtics');
     expect(celtics.sport).toBe('nba');

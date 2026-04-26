@@ -21,12 +21,26 @@ interface OnboardingProps {
   onToggleTeam: (teamId: string) => void;
   selectedSports: string[];
   onToggleSport: (sport: string) => void;
-  selectedMarket: string | null;
-  onSelectMarket: (marketId: string | null) => void;
+  selectedMarkets: string[];
+  onToggleMarket: (marketId: string) => void;
+  onClearMarkets: () => void;
   onComplete: () => void;
+  onFavoritesMigrated?: (teamIds: string[]) => void;
 }
 
-export function Onboarding({ selectedServices, onToggleService, selectedTeams, onToggleTeam, selectedSports, onToggleSport, selectedMarket, onSelectMarket, onComplete }: OnboardingProps) {
+export function Onboarding({
+  selectedServices,
+  onToggleService,
+  selectedTeams,
+  onToggleTeam,
+  selectedSports,
+  onToggleSport,
+  selectedMarkets,
+  onToggleMarket,
+  onClearMarkets,
+  onComplete,
+  onFavoritesMigrated,
+}: OnboardingProps) {
   const [step, setStep] = useState(0);
 
   if (step === 0) {
@@ -46,8 +60,9 @@ export function Onboarding({ selectedServices, onToggleService, selectedTeams, o
   if (step === 2) {
     return (
       <MarketPickerStep
-        selectedMarket={selectedMarket}
-        onSelect={onSelectMarket}
+        selectedMarkets={selectedMarkets}
+        onToggle={onToggleMarket}
+        onClear={onClearMarkets}
         onComplete={() => setStep(3)}
       />
     );
@@ -57,6 +72,7 @@ export function Onboarding({ selectedServices, onToggleService, selectedTeams, o
     <TeamPickerStep
       selectedTeams={selectedTeams}
       onToggle={onToggleTeam}
+      onFavoritesMigrated={onFavoritesMigrated}
       selectedSports={selectedSports}
       onToggleSport={onToggleSport}
       onComplete={onComplete}
@@ -177,6 +193,12 @@ function ServicePickerStep({
     : styles.screen;
 
   const topPadding = isLandscapeMobile ? 16 : isMobile ? 60 : Math.max(80, height * 0.12);
+  const isTv = Platform.isTV;
+  const serviceGridLayout = [
+    styles.serviceGrid,
+    isMobile && { gap: 10 },
+    isTv && styles.serviceGridTv,
+  ];
 
   return (
     <ScrollView testID="onboarding-service-picker" style={scrollStyle} contentContainerStyle={[styles.pickerContent, { paddingTop: topPadding }, isMobile && { paddingHorizontal: 20 }]} showsVerticalScrollIndicator={false}>
@@ -185,7 +207,7 @@ function ServicePickerStep({
         Lineup will only show games available on your services. You can change this anytime in Settings.
       </Text>
 
-      <View style={[styles.serviceGrid, isMobile && { gap: 10 }]}>
+      <View style={serviceGridLayout}>
         {MAJOR_SERVICES.map((service) => (
           <ServiceChip
             key={service.id}
@@ -194,12 +216,13 @@ function ServicePickerStep({
             isSelected={selectedServices.includes(service.id)}
             onPress={() => onToggle(service.id)}
             compact={isMobile}
+            fullWidth={isTv}
           />
         ))}
       </View>
       <Text style={styles.sectionLabel}>League packages</Text>
       <Text style={styles.sectionHint}>Add these if you subscribe to league-specific streaming</Text>
-      <View style={[styles.serviceGrid, isMobile && { gap: 10 }]}>
+      <View style={serviceGridLayout}>
         {LEAGUE_SERVICES.map((service) => (
           <ServiceChip
             key={service.id}
@@ -208,6 +231,7 @@ function ServicePickerStep({
             isSelected={selectedServices.includes(service.id)}
             onPress={() => onToggle(service.id)}
             compact={isMobile}
+            fullWidth={isTv}
           />
         ))}
       </View>
@@ -251,12 +275,14 @@ function ServicePickerStep({
 }
 
 function MarketPickerStep({
-  selectedMarket,
-  onSelect,
+  selectedMarkets,
+  onToggle,
+  onClear,
   onComplete,
 }: {
-  selectedMarket: string | null;
-  onSelect: (marketId: string | null) => void;
+  selectedMarkets: string[];
+  onToggle: (marketId: string) => void;
+  onClear: () => void;
   onComplete: () => void;
 }) {
   const btnScale = useRef(new Animated.Value(1)).current;
@@ -280,15 +306,16 @@ function MarketPickerStep({
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={[styles.stepTitle, isMobile && { fontSize: 26 }]}>Select your TV market</Text>
+      <Text style={[styles.stepTitle, isMobile && { fontSize: 26 }]}>Select your TV markets</Text>
       <Text style={styles.stepSubtitle}>
-        This helps Lineup show local channels like your regional sports network. You can skip this or change it later in Settings.
+        This helps Lineup show local channels like your regional sports networks. You can skip this or change it later in Settings.
       </Text>
 
       <View style={{ width: '100%', maxWidth: 700 }}>
         <MarketPicker
-          selectedMarket={selectedMarket}
-          onSelect={onSelect}
+          selectedMarkets={selectedMarkets}
+          onToggle={onToggle}
+          onClear={onClear}
           compact={isMobile}
         />
       </View>
@@ -339,12 +366,14 @@ function MarketPickerStep({
 function TeamPickerStep({
   selectedTeams,
   onToggle,
+  onFavoritesMigrated,
   selectedSports,
   onToggleSport,
   onComplete,
 }: {
   selectedTeams: string[];
   onToggle: (teamId: string) => void;
+  onFavoritesMigrated?: (teamIds: string[]) => void;
   selectedSports: string[];
   onToggleSport: (sport: string) => void;
   onComplete: () => void;
@@ -372,21 +401,24 @@ function TeamPickerStep({
     >
       <Text style={[styles.stepTitle, isMobile && { fontSize: 26 }]}>Pick your favorites</Text>
       <Text style={styles.stepSubtitle}>
-        Follow sports and teams to quickly filter the guide. You can skip this and change it anytime in Settings.
+        Add sports, teams, or both—only what you turn on is used. You can skip and change this anytime in Settings.
       </Text>
 
       <View style={{ width: '100%', maxWidth: 700 }}>
         <TeamPicker
           selectedTeams={selectedTeams}
           onToggle={onToggle}
+          onFavoritesMigrated={onFavoritesMigrated}
           selectedSports={selectedSports}
           onToggleSport={onToggleSport}
           compact={isMobile}
+          preferInitialFocus
         />
       </View>
 
       <Text style={styles.selectedCount}>
-        {selectedTeams.length + selectedSports.length} favorite{selectedTeams.length + selectedSports.length !== 1 ? 's' : ''} selected
+        {selectedTeams.length + selectedSports.length} favorite
+        {selectedTeams.length + selectedSports.length !== 1 ? 's' : ''} selected
       </Text>
 
       <View style={styles.teamPickerButtons}>
@@ -425,7 +457,9 @@ function TeamPickerStep({
             ]}
           >
             <Text style={styles.ctaText}>
-              {selectedTeams.length + selectedSports.length === 0 ? "Let\u2019s go" : `Done (${selectedTeams.length + selectedSports.length})`}
+              {selectedTeams.length + selectedSports.length === 0
+                ? "Let\u2019s go"
+                : 'Done'}
             </Text>
           </Pressable>
         </Animated.View>
@@ -440,12 +474,15 @@ function ServiceChip({
   isSelected,
   onPress,
   compact,
+  fullWidth,
 }: {
   name: string;
   color: string;
   isSelected: boolean;
   onPress: () => void;
   compact?: boolean;
+  /** TV: one column, full width — predictable up/down focus, no "row end" issues */
+  fullWidth?: boolean;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { width } = useWindowDimensions();
@@ -475,6 +512,7 @@ function ServiceChip({
         style={({ focused }) => [
           styles.chip,
           compact && { width: 150, height: 56, paddingHorizontal: 12, gap: 8 },
+          fullWidth && { width: '100%' as const, minWidth: undefined, alignSelf: 'stretch' },
           isSelected && { backgroundColor: color, borderColor: color },
           focused && styles.chipFocused,
         ]}
@@ -576,6 +614,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
     marginBottom: 24,
+  },
+  serviceGridTv: {
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+    alignItems: 'stretch',
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 640,
   },
   chip: {
     width: 220,

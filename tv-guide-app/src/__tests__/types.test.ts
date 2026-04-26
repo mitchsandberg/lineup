@@ -120,13 +120,14 @@ describe('Type definitions', () => {
         selectedSport: 'nba',
         favoriteTeams: ['2', '13'],
         favoriteSports: ['golf'],
-        tvMarket: 'new-york',
+        tvMarkets: ['new-york', 'boston'],
         onboardingComplete: true,
       };
       expect(prefs.selectedServices).toHaveLength(2);
       expect(prefs.selectedSport).toBe('nba');
       expect(prefs.favoriteTeams).toHaveLength(2);
       expect(prefs.favoriteSports).toEqual(['golf']);
+      expect(prefs.tvMarkets).toEqual(['new-york', 'boston']);
     });
 
     it('supports "all" sport selection', () => {
@@ -135,12 +136,13 @@ describe('Type definitions', () => {
         selectedSport: 'all',
         favoriteTeams: [],
         favoriteSports: [],
-        tvMarket: null,
+        tvMarkets: [],
         onboardingComplete: false,
       };
       expect(prefs.selectedSport).toBe('all');
       expect(prefs.favoriteTeams).toEqual([]);
       expect(prefs.favoriteSports).toEqual([]);
+      expect(prefs.tvMarkets).toEqual([]);
     });
   });
 
@@ -149,10 +151,10 @@ describe('Type definitions', () => {
       const team: TeamInfo = {
         sport: 'nba',
         league: 'NBA',
-        teamId: '2',
+        teamId: 'nba:2',
         teamName: 'Boston Celtics',
       };
-      expect(team.teamId).toBe('2');
+      expect(team.teamId).toBe('nba:2');
       expect(team.teamName).toBe('Boston Celtics');
     });
   });

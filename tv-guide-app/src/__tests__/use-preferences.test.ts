@@ -194,6 +194,22 @@ describe('usePreferences', () => {
     expect(result.favoriteSports).toContain('mma');
   });
 
+  it('toggleFavoriteSport handles undefined favoriteSports gracefully', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleFavoriteSport } = usePreferences();
+
+    toggleFavoriteSport('tennis');
+
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      favoriteTeams: [],
+      onboardingComplete: false,
+    });
+    expect(result.favoriteSports).toEqual(['tennis']);
+  });
+
   it('toggleService saves to localStorage on web', async () => {
     const { usePreferences } = require('@/hooks/use-preferences');
     const { toggleService } = usePreferences();
@@ -327,43 +343,117 @@ describe('usePreferences', () => {
     expect(result.favoriteTeams).toContain('7');
   });
 
-  it('returns default tvMarket as null', () => {
+  it('returns default tvMarkets as an empty array', () => {
     const { usePreferences } = require('@/hooks/use-preferences');
     const { prefs } = usePreferences();
-    expect(prefs.tvMarket).toBeNull();
+    expect(prefs.tvMarkets).toEqual([]);
   });
 
-  it('setTvMarket sets a market', () => {
+  it('toggleTvMarket adds a market when not present', () => {
     const { usePreferences } = require('@/hooks/use-preferences');
-    const { setTvMarket } = usePreferences();
+    const { toggleTvMarket } = usePreferences();
 
-    setTvMarket('new-york');
+    toggleTvMarket('new-york');
 
     expect(mockSetState).toHaveBeenCalled();
     const updater = mockSetState.mock.calls[0][0];
     const result = updater({
       selectedServices: ['youtube-tv'],
       selectedSport: 'all',
-      tvMarket: null,
+      tvMarkets: [],
       onboardingComplete: false,
     });
-    expect(result.tvMarket).toBe('new-york');
+    expect(result.tvMarkets).toEqual(['new-york']);
   });
 
-  it('setTvMarket clears market with null', () => {
+  it('toggleTvMarket removes a market when already present', () => {
     const { usePreferences } = require('@/hooks/use-preferences');
-    const { setTvMarket } = usePreferences();
+    const { toggleTvMarket } = usePreferences();
 
-    setTvMarket(null);
+    toggleTvMarket('boston');
 
     const updater = mockSetState.mock.calls[0][0];
     const result = updater({
       selectedServices: ['youtube-tv'],
       selectedSport: 'all',
-      tvMarket: 'boston',
+      tvMarkets: ['new-york', 'boston'],
       onboardingComplete: false,
     });
-    expect(result.tvMarket).toBeNull();
+    expect(result.tvMarkets).toEqual(['new-york']);
+  });
+
+  it('toggleTvMarket handles undefined tvMarkets gracefully', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { toggleTvMarket } = usePreferences();
+
+    toggleTvMarket('seattle');
+
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      onboardingComplete: false,
+    });
+    expect(result.tvMarkets).toEqual(['seattle']);
+  });
+
+  it('clearTvMarkets removes all selected markets', () => {
+    const { usePreferences } = require('@/hooks/use-preferences');
+    const { clearTvMarkets } = usePreferences();
+
+    clearTvMarkets();
+
+    const updater = mockSetState.mock.calls[0][0];
+    const result = updater({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      tvMarkets: ['new-york', 'boston'],
+      onboardingComplete: false,
+    });
+    expect(result.tvMarkets).toEqual([]);
+  });
+
+  it('loadPreferences migrates legacy tvMarket to tvMarkets', async () => {
+    mockLocalStorage['tv-guide-preferences'] = JSON.stringify({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      tvMarket: 'boston',
+      onboardingComplete: true,
+    });
+
+    const { usePreferences } = require('@/hooks/use-preferences');
+    usePreferences();
+
+    mockEffectCallback!();
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(mockSetState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tvMarkets: ['boston'],
+      }),
+    );
+  });
+
+  it('loadPreferences keeps stored tvMarkets over legacy tvMarket', async () => {
+    mockLocalStorage['tv-guide-preferences'] = JSON.stringify({
+      selectedServices: ['youtube-tv'],
+      selectedSport: 'all',
+      tvMarket: 'boston',
+      tvMarkets: ['new-york', 'seattle'],
+      onboardingComplete: true,
+    });
+
+    const { usePreferences } = require('@/hooks/use-preferences');
+    usePreferences();
+
+    mockEffectCallback!();
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(mockSetState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tvMarkets: ['new-york', 'seattle'],
+      }),
+    );
   });
 
   it('loadPreferences handles corrupt JSON gracefully', async () => {

@@ -51,7 +51,12 @@ export function EventRow({ label, events, userServices, sizes, onShowServicePick
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <EventCard event={item} userServices={userServices} sizes={sizes} onShowServicePicker={onShowServicePicker} />
+          <EventCard
+            event={item}
+            userServices={userServices}
+            sizes={sizes}
+            onShowServicePicker={onShowServicePicker}
+          />
         )}
         contentContainerStyle={dynamicStyles.listContent}
         showsHorizontalScrollIndicator={false}

@@ -79,6 +79,7 @@ export const STREAMING_SERVICES: StreamingService[] = [
     playStorePackage: 'com.cbs.ott',
     deepLinks: {
       tvos: 'paramountplus://',
+      ios: 'https://www.paramountplus.com',
       android: 'intent://paramountplus.com#Intent;package=com.cbs.ott;scheme=https;end',
       web: 'https://www.paramountplus.com',
     },

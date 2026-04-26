@@ -5,12 +5,13 @@ import { MarketInfo } from '@/lib/types';
 import { fetchMarkets } from '@/lib/api';
 
 interface MarketPickerProps {
-  selectedMarket: string | null;
-  onSelect: (marketId: string | null) => void;
+  selectedMarkets: string[];
+  onToggle: (marketId: string) => void;
+  onClear: () => void;
   compact?: boolean;
 }
 
-export function MarketPicker({ selectedMarket, onSelect, compact }: MarketPickerProps) {
+export function MarketPicker({ selectedMarkets, onToggle, onClear, compact }: MarketPickerProps) {
   const [markets, setMarkets] = useState<MarketInfo[]>([]);
   const [search, setSearch] = useState('');
   /** iOS/phone: actual TextInput focus. */
@@ -129,27 +130,27 @@ export function MarketPicker({ selectedMarket, onSelect, compact }: MarketPicker
 
       <Pressable
         testID="market-none"
-        onPress={() => onSelect(null)}
+        onPress={onClear}
         style={({ focused }) => [
           styles.chip,
           chipSize,
-          !selectedMarket && styles.chipSelected,
+          selectedMarkets.length === 0 && styles.chipSelected,
           showFocus && focused && styles.chipFocused,
         ]}
       >
         <Text style={[styles.chipText, { fontSize }]}>
-          {!selectedMarket ? '✓ ' : ''}None
+          {selectedMarkets.length === 0 ? '✓ ' : ''}None
         </Text>
       </Pressable>
 
       <View style={styles.grid}>
         {filtered.map((market) => {
-          const isSelected = selectedMarket === market.id;
+          const isSelected = selectedMarkets.includes(market.id);
           return (
             <Pressable
               key={market.id}
               testID={`market-${market.id}`}
-              onPress={() => onSelect(market.id)}
+              onPress={() => onToggle(market.id)}
               style={({ focused }) => [
                 styles.chip,
                 chipSize,

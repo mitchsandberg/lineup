@@ -9,7 +9,7 @@ import { DeepLinkDevPanel } from '@/components/deep-link-dev-panel';
 import { usePreferences } from '@/hooks/use-preferences';
 
 export default function SettingsScreen() {
-  const { prefs, toggleService, toggleTeam, toggleFavoriteSport, setTvMarket } = usePreferences();
+  const { prefs, toggleService, toggleTeam, updateTeams, toggleFavoriteSport, toggleTvMarket, clearTvMarkets } = usePreferences();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isMobile = width < 600;
@@ -47,14 +47,15 @@ export default function SettingsScreen() {
 
         <View style={styles.divider} />
 
-        <Text style={[styles.heading, isMobile && { fontSize: 26 }]}>TV Market</Text>
+        <Text style={[styles.heading, isMobile && { fontSize: 26 }]}>TV Markets</Text>
         <Text style={styles.subheading}>
-          Select your local TV market to see regional sports networks and local channels.
+          Select your local TV markets to see regional sports networks and local channels.
         </Text>
 
         <MarketPicker
-          selectedMarket={prefs.tvMarket ?? null}
-          onSelect={setTvMarket}
+          selectedMarkets={prefs.tvMarkets ?? []}
+          onToggle={toggleTvMarket}
+          onClear={clearTvMarkets}
           compact={isMobile}
         />
 
@@ -62,12 +63,13 @@ export default function SettingsScreen() {
 
         <Text style={[styles.heading, isMobile && { fontSize: 26 }]}>My Favorites</Text>
         <Text style={styles.subheading}>
-          Follow sports and teams to quickly filter the guide to what you care about.
+          Pick whole sports, specific teams, or both. Nothing is selected until you turn it on.
         </Text>
 
         <TeamPicker
           selectedTeams={prefs.favoriteTeams ?? []}
           onToggle={toggleTeam}
+          onFavoritesMigrated={updateTeams}
           selectedSports={prefs.favoriteSports ?? []}
           onToggleSport={toggleFavoriteSport}
           compact={isMobile}

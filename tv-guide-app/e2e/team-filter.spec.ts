@@ -30,7 +30,7 @@ test.describe('Team filter on guide', () => {
         JSON.stringify({
           selectedServices: ['youtube-tv', 'espn-plus'],
           selectedSport: 'all',
-          favoriteTeams: ['2', '13'],
+          favoriteTeams: ['nba:2', 'nba:13'],
           favoriteSports: [],
           onboardingComplete: true,
         }),

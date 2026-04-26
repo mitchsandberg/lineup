@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { SportEvent, GroupedEvents, TimeGroup, SportCategory, TeamInfo, MarketInfo, RegionalBroadcast } from './types';
+import { eventMatchesAnyFavoriteTeam } from './favorite-team-ids';
 import { findChannelByName } from '@/data/channels';
 
 const PRODUCTION_API = 'https://lineup-api-31li.onrender.com';
@@ -58,15 +59,76 @@ function toSportEvent(event: APIEvent): SportEvent {
 
 const API_KEY = process.env.EXPO_PUBLIC_LINEUP_API_KEY ?? '';
 
-export async function fetchEvents(): Promise<SportEvent[]> {
-  try {
-    const headers: Record<string, string> = {};
-    if (API_KEY) headers['x-api-key'] = API_KEY;
+function fetchWithTimeout(
+  input: string,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(id));
+}
 
-    const res = await fetch(`${API_BASE}/api/events`, { headers });
+/**
+ * Teams and markets are served only by the API. In __DEV__ we use localhost:3001;
+ * if that is not running (or wrong API key), retry the hosted API so pickers are not empty.
+ */
+async function fetchListFromApi(
+  listKey: 'teams' | 'markets',
+): Promise<MarketInfo[] | TeamInfo[]> {
+  const fromBase = async (base: string, sendApiKey: boolean) => {
+    const headers: Record<string, string> = {};
+    if (sendApiKey && API_KEY) {
+      headers['x-api-key'] = API_KEY;
+    }
+    const res = await fetch(`${base}/api/${listKey}`, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data[listKey] as MarketInfo[] | TeamInfo[];
+  };
+
+  try {
+    return await fromBase(API_BASE, true);
+  } catch (err) {
+    if (__DEV__ && API_BASE !== PRODUCTION_API) {
+      try {
+        console.warn(`[api] local /api/${listKey} failed, using production`, err);
+        // Hosted GET lists are unauthenticated; a dev-only local key that does not
+        // match Render would otherwise 401 the fallback and show empty pickers.
+        return await fromBase(PRODUCTION_API, false);
+      } catch (e2) {
+        console.warn(`Failed to fetch /api/${listKey}`, e2);
+        return [];
+      }
+    }
+    console.warn(`Failed to fetch /api/${listKey}`, err);
+    return [];
+  }
+}
+
+export async function fetchEvents(): Promise<SportEvent[]> {
+  const fromBase = async (base: string, sendKey: boolean, timeoutMs: number) => {
+    const headers: Record<string, string> = {};
+    if (sendKey && API_KEY) {
+      headers['x-api-key'] = API_KEY;
+    }
+    const res = await fetchWithTimeout(`${base}/api/events`, { headers }, timeoutMs);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return (data.events as APIEvent[]).map(toSportEvent);
+  };
+
+  try {
+    if (__DEV__ && API_BASE !== PRODUCTION_API) {
+      try {
+        // No local server: fetch can hang a long time; cap so the guide is not stuck on "Loading…"
+        return await fromBase(LOCAL_API, true, 8_000);
+      } catch (err) {
+        console.warn('[api] local /api/events failed, using production', err);
+        return await fromBase(PRODUCTION_API, false, 30_000);
+      }
+    }
+    return await fromBase(API_BASE, true, 30_000);
   } catch (err) {
     console.warn('Failed to fetch from API, using mock data', err);
     return getMockEvents();
@@ -74,33 +136,11 @@ export async function fetchEvents(): Promise<SportEvent[]> {
 }
 
 export async function fetchTeams(): Promise<TeamInfo[]> {
-  try {
-    const headers: Record<string, string> = {};
-    if (API_KEY) headers['x-api-key'] = API_KEY;
-
-    const res = await fetch(`${API_BASE}/api/teams`, { headers });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.teams as TeamInfo[];
-  } catch (err) {
-    console.warn('Failed to fetch teams', err);
-    return [];
-  }
+  return (await fetchListFromApi('teams')) as TeamInfo[];
 }
 
 export async function fetchMarkets(): Promise<MarketInfo[]> {
-  try {
-    const headers: Record<string, string> = {};
-    if (API_KEY) headers['x-api-key'] = API_KEY;
-
-    const res = await fetch(`${API_BASE}/api/markets`, { headers });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.markets as MarketInfo[];
-  } catch (err) {
-    console.warn('Failed to fetch markets', err);
-    return [];
-  }
+  return (await fetchListFromApi('markets')) as MarketInfo[];
 }
 
 export function groupEventsByTime(events: SportEvent[]): GroupedEvents[] {
@@ -227,10 +267,7 @@ export function filterEvents(
       return sportMatch && serviceMatch;
     }
 
-    const matchesTeam = hasTeamFilter && (
-      favoriteTeams!.includes(e.homeTeamId ?? '') ||
-      favoriteTeams!.includes(e.awayTeamId ?? '')
-    );
+    const matchesTeam = hasTeamFilter && eventMatchesAnyFavoriteTeam(favoriteTeams!, e);
     const matchesSport = hasSportFilter && favoriteSports!.includes(e.sport);
 
     return sportMatch && serviceMatch && (matchesTeam || matchesSport);

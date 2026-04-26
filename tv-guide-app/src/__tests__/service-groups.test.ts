@@ -85,6 +85,7 @@ describe('league service deep links', () => {
     const pp = SERVICE_MAP['paramount-plus'];
     expect(pp).toBeDefined();
     expect(pp.deepLinks.tvos).toBe('paramountplus://');
+    expect(pp.deepLinks.ios).toBe('https://www.paramountplus.com');
     expect(pp.deepLinks.android).toContain('cbs.ott');
     expect(pp.deepLinks.web).toBe('https://www.paramountplus.com');
   });

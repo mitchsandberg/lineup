@@ -51,18 +51,19 @@ for (const market of MARKET_CHANNELS) {
 
 export function resolveRSN(
   event: SportEvent,
-  marketId: string | null,
+  marketIds: string[],
 ): { channel: string; extraServices: string[] } | null {
-  if (!marketId || !event.regionalChannels?.length) return null;
-
-  const marketChannels = MARKET_INDEX.get(marketId);
-  if (!marketChannels) return null;
+  if (marketIds.length === 0 || !event.regionalChannels?.length) return null;
 
   for (const rb of event.regionalChannels) {
     if (rb.type === 'national') continue;
-    const match = marketChannels.get(rb.channel.toLowerCase());
-    if (match) {
-      return { channel: rb.channel, extraServices: match.serviceIds };
+    const channelName = rb.channel.toLowerCase();
+    for (const marketId of marketIds) {
+      const marketChannels = MARKET_INDEX.get(marketId);
+      const match = marketChannels?.get(channelName);
+      if (match) {
+        return { channel: rb.channel, extraServices: match.serviceIds };
+      }
     }
   }
 
@@ -71,9 +72,9 @@ export function resolveRSN(
 
 export function enrichEventWithRSN(
   event: SportEvent,
-  marketId: string | null,
+  marketIds: string[],
 ): SportEvent {
-  const rsn = resolveRSN(event, marketId);
+  const rsn = resolveRSN(event, marketIds);
   if (!rsn) return event;
 
   const mergedServices = [...event.availableServices];

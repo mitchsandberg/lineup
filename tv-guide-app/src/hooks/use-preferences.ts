@@ -9,7 +9,7 @@ const defaultPreferences: UserPreferences = {
   selectedSport: 'all',
   favoriteTeams: [],
   favoriteSports: [],
-  tvMarket: null,
+  tvMarkets: [],
   onboardingComplete: false,
 };
 
@@ -28,15 +28,32 @@ async function getStorage() {
   return AsyncStorage;
 }
 
+type StoredPreferences = Partial<UserPreferences> & {
+  tvMarket?: string | null;
+  tvMarkets?: string[];
+};
+
+function normalizePreferences(stored: StoredPreferences): UserPreferences {
+  const { tvMarket: legacyTvMarket, tvMarkets: storedTvMarkets, ...rest } = stored;
+  const legacyMarket = legacyTvMarket ? [legacyTvMarket] : [];
+  const tvMarkets = Array.isArray(storedTvMarkets) ? storedTvMarkets : legacyMarket;
+
+  return {
+    ...defaultPreferences,
+    ...rest,
+    tvMarkets,
+  };
+}
+
 async function loadPreferences(): Promise<UserPreferences> {
   try {
     const storage = await getStorage();
     if (storage) {
       const raw = await storage.getItem(STORAGE_KEY);
-      if (raw) return { ...defaultPreferences, ...JSON.parse(raw) };
+      if (raw) return normalizePreferences(JSON.parse(raw));
     } else if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return { ...defaultPreferences, ...JSON.parse(raw) };
+      if (raw) return normalizePreferences(JSON.parse(raw));
     }
   } catch {}
   return defaultPreferences;
@@ -62,7 +79,8 @@ interface PreferencesContextValue {
   toggleTeam: (teamId: string) => void;
   updateTeams: (teamIds: string[]) => void;
   toggleFavoriteSport: (sport: string) => void;
-  setTvMarket: (marketId: string | null) => void;
+  toggleTvMarket: (marketId: string) => void;
+  clearTvMarkets: () => void;
   setSport: (sport: SportCategory) => void;
   completeOnboarding: () => void;
 }
@@ -138,9 +156,21 @@ function usePreferencesState(): PreferencesContextValue {
     });
   }, []);
 
-  const setTvMarket = useCallback((marketId: string | null) => {
+  const toggleTvMarket = useCallback((marketId: string) => {
     setPrefs((prev) => {
-      const updated = { ...prev, tvMarket: marketId };
+      const current = prev.tvMarkets ?? [];
+      const next = current.includes(marketId)
+        ? current.filter((id) => id !== marketId)
+        : [...current, marketId];
+      const updated = { ...prev, tvMarkets: next };
+      savePreferences(updated);
+      return updated;
+    });
+  }, []);
+
+  const clearTvMarkets = useCallback(() => {
+    setPrefs((prev) => {
+      const updated = { ...prev, tvMarkets: [] };
       savePreferences(updated);
       return updated;
     });
@@ -154,7 +184,7 @@ function usePreferencesState(): PreferencesContextValue {
     });
   }, []);
 
-  return { prefs, loaded, updateServices, toggleService, toggleTeam, updateTeams, toggleFavoriteSport, setTvMarket, setSport, completeOnboarding };
+  return { prefs, loaded, updateServices, toggleService, toggleTeam, updateTeams, toggleFavoriteSport, toggleTvMarket, clearTvMarkets, setSport, completeOnboarding };
 }
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);

@@ -65,10 +65,10 @@ const mockEvents = [
 ];
 
 const mockTeams = [
-  { sport: 'mlb', league: 'MLB', teamId: '7', teamName: 'Boston Red Sox' },
-  { sport: 'mlb', league: 'MLB', teamId: '10', teamName: 'New York Yankees' },
-  { sport: 'nba', league: 'NBA', teamId: '2', teamName: 'Boston Celtics' },
-  { sport: 'nba', league: 'NBA', teamId: '13', teamName: 'Los Angeles Lakers' },
+  { sport: 'mlb', league: 'MLB', teamId: 'mlb:7', teamName: 'Boston Red Sox' },
+  { sport: 'mlb', league: 'MLB', teamId: 'mlb:10', teamName: 'New York Yankees' },
+  { sport: 'nba', league: 'NBA', teamId: 'nba:2', teamName: 'Boston Celtics' },
+  { sport: 'nba', league: 'NBA', teamId: 'nba:13', teamName: 'Los Angeles Lakers' },
 ];
 
 jest.mock('../sports-api', () => ({

@@ -429,7 +429,8 @@ export async function fetchAllTeams(): Promise<TeamEntry[]> {
       results.push({
         sport: config.sport,
         league: config.league,
-        teamId: entry.team.id,
+        // Namespace ESPN ids: they repeat across sports (e.g. NBA vs MLB "9")
+        teamId: `${config.sport}:${entry.team.id}`,
         teamName: entry.team.displayName,
       });
     }

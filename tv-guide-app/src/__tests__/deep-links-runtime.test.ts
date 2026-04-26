@@ -362,6 +362,17 @@ describe('launchStreamingApp on mobile web', () => {
 
     Object.defineProperty(global, 'navigator', { value: savedNavigator, writable: true });
   });
+
+  it('uses the Paramount+ iOS universal link on iPhone mobile web', async () => {
+    setMobileUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    const mockOpen = jest.fn();
+    (global as any).window = { open: mockOpen };
+
+    const result = await launchStreamingApp('paramount-plus');
+
+    expect(result).toBe(true);
+    expect(mockOpen).toHaveBeenCalledWith('https://www.paramountplus.com', '_blank');
+  });
 });
 
 describe('launchStreamingApp fallback catch branches', () => {

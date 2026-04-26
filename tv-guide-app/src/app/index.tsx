@@ -19,6 +19,11 @@ import { usePreferences } from '@/hooks/use-preferences';
 import { useResponsive } from '@/hooks/use-responsive';
 import { enrichEventWithRSN } from '@/lib/rsn';
 
+const useTVEventHandler = Platform.isTV
+  ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('react-native').useTVEventHandler
+  : (_: unknown) => {};
+
 export default function GuideScreen() {
   const [events, setEvents] = useState<SportEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +32,7 @@ export default function GuideScreen() {
   const [pickerServices, setPickerServices] = useState<StreamingService[]>([]);
   const [pickerEvent, setPickerEvent] = useState<SportEvent | null>(null);
   const [showMyTeams, setShowMyTeams] = useState(false);
+  const [teamToggleFocused, setTeamToggleFocused] = useState(false);
   const { prefs, setSport, loaded } = usePreferences();
   const sizes = useResponsive();
   const insets = useSafeAreaInsets();
@@ -66,8 +72,8 @@ export default function GuideScreen() {
   }, [loadEvents]);
 
   const enrichedEvents = useMemo(
-    () => events.map((e) => enrichEventWithRSN(e, prefs.tvMarket ?? null)),
-    [events, prefs.tvMarket],
+    () => events.map((e) => enrichEventWithRSN(e, prefs.tvMarkets ?? [])),
+    [events, prefs.tvMarkets],
   );
 
   const hasFavorites = (prefs.favoriteTeams ?? []).length > 0 || (prefs.favoriteSports ?? []).length > 0;
@@ -78,6 +84,13 @@ export default function GuideScreen() {
   const grouped: GroupedEvents[] = prefs.selectedSport === 'all'
     ? groupEventsBySport(filteredEvents)
     : groupEventsByTime(filteredEvents);
+
+  useTVEventHandler((event: { eventType?: string; eventKeyAction?: number }) => {
+    if (!teamToggleFocused) return;
+    if (event.eventKeyAction !== 1) return;
+    if (event.eventType === 'left') setShowMyTeams(false);
+    if (event.eventType === 'right') setShowMyTeams(true);
+  });
 
   const isMobile = sizes.rowPadding < 32;
 
@@ -140,54 +153,73 @@ export default function GuideScreen() {
       <SportFilter selected={prefs.selectedSport} onSelect={setSport} sizes={sizes} />
       {hasFavorites && (
         <View testID="team-toggle" style={[styles.teamToggleRow, { paddingHorizontal: sizes.rowPadding }]}>
-          <View style={styles.teamToggle}>
+          {Platform.isTV ? (
             <Pressable
-              testID="team-toggle-all"
-              onPress={() => setShowMyTeams(false)}
+              testID="team-toggle-my"
+              accessibilityRole="switch"
+              accessibilityState={{ checked: showMyTeams }}
+              accessibilityLabel="Show my favorites"
+              onPress={() => setShowMyTeams((current) => !current)}
+              onFocus={() => setTeamToggleFocused(true)}
+              onBlur={() => setTeamToggleFocused(false)}
               style={({ focused }) => [
-                styles.teamToggleBtn,
-                isMobile && styles.teamToggleBtnCompact,
-                !showMyTeams && styles.teamToggleBtnActive,
-                Platform.isTV && focused && styles.teamToggleBtnFocused,
+                styles.tvTeamSegmentToggle,
+                focused && styles.tvTeamSegmentToggleFocused,
               ]}
             >
-              {({ focused }) => (
+              <View style={[styles.tvTeamSegment, !showMyTeams && styles.tvTeamSegmentActive]}>
+                <Text style={[styles.tvTeamSegmentText, !showMyTeams && styles.tvTeamSegmentTextActive]}>
+                  All Sports
+                </Text>
+              </View>
+              <View style={[styles.tvTeamSegment, showMyTeams && styles.tvTeamSegmentActive]}>
+                <Text style={[styles.tvTeamSegmentText, showMyTeams && styles.tvTeamSegmentTextActive]}>
+                  My Favorites
+                </Text>
+              </View>
+            </Pressable>
+          ) : (
+            <View style={styles.teamToggle}>
+              <Pressable
+                testID="team-toggle-all"
+                onPress={() => setShowMyTeams(false)}
+                style={[
+                  styles.teamToggleBtn,
+                  isMobile && styles.teamToggleBtnCompact,
+                  !showMyTeams && styles.teamToggleBtnActive,
+                ]}
+              >
                 <Text
                   style={[
                     styles.teamToggleText,
                     isMobile && { fontSize: 12 },
                     !showMyTeams && styles.teamToggleTextActive,
-                    Platform.isTV && focused && showMyTeams && styles.teamToggleTextTvInactiveFocused,
                   ]}
                 >
                   All Games
                 </Text>
-              )}
-            </Pressable>
-            <Pressable
-              testID="team-toggle-my"
-              onPress={() => setShowMyTeams(true)}
-              style={({ focused }) => [
-                styles.teamToggleBtn,
-                isMobile && styles.teamToggleBtnCompact,
-                showMyTeams && styles.teamToggleBtnActive,
-                Platform.isTV && focused && styles.teamToggleBtnFocused,
-              ]}
-            >
-              {({ focused }) => (
+              </Pressable>
+              <Pressable
+                testID="team-toggle-my"
+                onPress={() => setShowMyTeams(true)}
+                style={[
+                  styles.teamToggleBtn,
+                  isMobile && styles.teamToggleBtnCompact,
+                  showMyTeams && styles.teamToggleBtnActive,
+                ]}
+              >
                 <Text
                   style={[
                     styles.teamToggleText,
                     isMobile && { fontSize: 12 },
                     showMyTeams && styles.teamToggleTextActive,
-                    Platform.isTV && focused && !showMyTeams && styles.teamToggleTextTvInactiveFocused,
                   ]}
                 >
                   My Favorites
                 </Text>
-              )}
-            </Pressable>
-          </View>
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
     </>
@@ -285,7 +317,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0D1117',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
+    gap: 24,
   },
   loadingText: {
     color: '#8B95A5',
@@ -359,8 +391,38 @@ const styles = StyleSheet.create({
   teamToggleTextActive: {
     color: '#000000',
   },
-  /** The inactive segment is focused: stay readable on the dark track. */
-  teamToggleTextTvInactiveFocused: {
-    color: '#E8EAEF',
+  tvTeamSegmentToggle: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1F2E',
+    borderRadius: 26,
+    borderWidth: 3,
+    borderColor: 'transparent',
+    padding: 3,
+  },
+  tvTeamSegmentToggleFocused: {
+    borderColor: '#FFFFFF',
+  },
+  tvTeamSegment: {
+    minWidth: 150,
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+  },
+  tvTeamSegmentActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#111827',
+  },
+  tvTeamSegmentText: {
+    color: '#B8C0D0',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  tvTeamSegmentTextActive: {
+    color: '#111827',
   },
 });
